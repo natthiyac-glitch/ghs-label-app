@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tank Farm GHS Generator</title>
     
-    <!-- 1. Load React & Tailwind via CDN (ไม่ต้องลงโปรแกรม) -->
+    <!-- Load React & Tailwind via CDN -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. Icons (Inline SVG เพื่อความเสถียรสูงสุด ไม่ต้องพึ่ง Server นอก) -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap');
         body { font-family: 'Sarabun', sans-serif; }
@@ -32,7 +31,6 @@
 
     <div id="root"></div>
 
-    <!-- 3. React Application Code -->
     <script type="text/babel">
         const { useState, useEffect } = React;
 
@@ -80,7 +78,6 @@
             });
             const [fontScale, setFontScale] = useState(1);
 
-            // *** ส่วนสำคัญ: รับค่าจาก AppSheet ผ่าน URL ***
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
                 if (params.has('tankId')) setFormData(prev => ({ ...prev, tankId: params.get('tankId') }));
@@ -130,7 +127,6 @@
                     <div className="max-w-7xl mx-auto p-4 flex flex-col lg:flex-row gap-6">
                         {/* INPUT FORM */}
                         <div className="no-print w-full lg:w-1/3 bg-white p-6 rounded-lg shadow-sm border space-y-6 h-fit overflow-y-auto max-h-[90vh]">
-                            {/* Inputs... (เหมือนเดิมแต่ตัดทอนให้สั้นลงในโค้ดนี้) */}
                             <div className="space-y-3">
                                 <h3 className="font-bold border-b pb-1 text-blue-800">1. ข้อมูลทั่วไป</h3>
                                 <div className="grid grid-cols-2 gap-3">
@@ -149,11 +145,30 @@
                                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'pictogramImage')} />
                                     </label>
                                 </div>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {['nfpaHealth', 'nfpaFlammability', 'nfpaInstability', 'nfpaSpecial'].map((f, i) => (
-                                        <input key={f} className="border p-1 text-center" placeholder={['H','F','I','S'][i]} value={formData[f]} onChange={e => setFormData({...formData, [f]: e.target.value})} />
-                                    ))}
+                                
+                                {/* NFPA Inputs */}
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 mb-1">NFPA (ตัวเลข)</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        <div className="text-center">
+                                            <span className="text-xs text-blue-600 font-bold">H</span>
+                                            <input className="border p-1 text-center w-full rounded" value={formData.nfpaHealth} onChange={e => setFormData({...formData, nfpaHealth: e.target.value})} />
+                                        </div>
+                                        <div className="text-center">
+                                            <span className="text-xs text-red-600 font-bold">F</span>
+                                            <input className="border p-1 text-center w-full rounded" value={formData.nfpaFlammability} onChange={e => setFormData({...formData, nfpaFlammability: e.target.value})} />
+                                        </div>
+                                        <div className="text-center">
+                                            <span className="text-xs text-yellow-500 font-bold">I</span>
+                                            <input className="border p-1 text-center w-full rounded" value={formData.nfpaInstability} onChange={e => setFormData({...formData, nfpaInstability: e.target.value})} />
+                                        </div>
+                                        <div className="text-center">
+                                            <span className="text-xs text-gray-500 font-bold">S</span>
+                                            <input className="border p-1 text-center w-full rounded" value={formData.nfpaSpecial} onChange={e => setFormData({...formData, nfpaSpecial: e.target.value})} />
+                                        </div>
+                                    </div>
                                 </div>
+
                                 <select className="w-full border p-2 rounded" value={formData.signalWord} onChange={e => setFormData({...formData, signalWord: e.target.value})}>
                                     <option value="DANGER">DANGER</option> <option value="WARNING">WARNING</option> <option value="">NONE</option>
                                 </select>
@@ -206,7 +221,15 @@
                                 <div className="flex flex-grow border-b-4 border-black box-border h-[62%]">
                                     <div className="w-[30%] border-r-4 border-black flex flex-col">
                                         <div className="h-[60%] flex flex-col items-center justify-center p-2 gap-2">
-                                            <div className="w-24 h-24 lg:w-32 lg:h-32"><NFPADiamond {...formData} /></div>
+                                            <div className="w-24 h-24 lg:w-32 lg:h-32">
+                                                {/* FIX: ส่งค่า props ให้ตรงชื่อที่ NFPADiamond ต้องการ */}
+                                                <NFPADiamond 
+                                                    health={formData.nfpaHealth} 
+                                                    flammability={formData.nfpaFlammability} 
+                                                    instability={formData.nfpaInstability} 
+                                                    special={formData.nfpaSpecial} 
+                                                />
+                                            </div>
                                             {formData.signalWord && (
                                                 <div className={`font-black uppercase tracking-widest px-3 py-1 rounded leading-none ${formData.signalWord === 'DANGER' ? 'bg-red-600 text-white' : 'bg-orange-500 text-white'}`} style={{ fontSize: `${1.5 * fontScale}rem` }}>{formData.signalWord}</div>
                                             )}
