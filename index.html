@@ -2,8 +2,13 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบสร้างป้าย GHS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GHS Label Generator</title>
+    
+    <!-- PWA Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GHS Maker">
     
     <!-- 1. Load Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -20,13 +25,13 @@
         
         body { 
             font-family: 'Sarabun', sans-serif; 
-            /* Theme: Orange & Sky Blue */
             background-color: #fff7ed; /* Orange-50 */
             background-image: radial-gradient(#fed7aa 1px, transparent 1px);
             background-size: 20px 20px;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        h1, h2, h3, .kawaii-font { font-family: 'Sarabun', sans-serif; font-weight: 600; }
+        h1, h2, h3, .kawaii-font { font-family: 'Fredoka', sans-serif; }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
@@ -50,13 +55,6 @@
             @page { size: landscape; margin: 0; }
             body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
-            #tank-label-preview { 
-                position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; 
-                border: none; margin: 0; max-width: none; 
-                box-shadow: none !important;
-                transform: none !important;
-                z-index: 9999;
-            }
         }
         
         /* Custom Slider Style */
@@ -89,9 +87,14 @@
         }
 
         /* Draggable Panel */
-        .draggable-panel {
-            cursor: move;
-            user-select: none;
+        .draggable-panel { cursor: move; user-select: none; }
+
+        /* Modal Overlay to force Center */
+        .modal-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
         }
     </style>
 </head>
@@ -113,7 +116,10 @@
             Trash: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
             ImageIcon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
             Maximize: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>,
-            Move: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+            Move: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>,
+            Folder: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>,
+            SaveDisk: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
+            NewWindow: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         };
         
         const PPE_LIST = [
@@ -182,8 +188,8 @@
                         
                         {/* Upper: NFPA */}
                         <div className="h-[55%] flex flex-col items-center justify-center p-1 border-b-4 border-black bg-white relative">
-                            {/* Adjusted Size Container for NFPA */}
-                            <div className="w-20 h-20 lg:w-24 lg:h-24">
+                            {/* Adjusted Size Container for NFPA (INCREASED SIZE) */}
+                            <div className="w-28 h-28 lg:w-32 lg:h-32">
                                 <NFPADiamond 
                                     health={formData.nfpaHealth} 
                                     flammability={formData.nfpaFlammability} 
@@ -194,9 +200,9 @@
                         </div>
 
                         {/* Lower: Signal Word */}
-                        <div className="h-[45%] flex items-center justify-center p-2 overflow-hidden relative bg-white">
+                        <div className="h-[45%] flex items-center justify-center p-0 overflow-hidden relative bg-white">
                              {formData.signalWord && (
-                                <div className={`font-black uppercase tracking-widest px-2 py-1 rounded flex items-center justify-center w-full h-auto text-center ${formData.signalWord.includes('DANGER') ? 'bg-red-600 text-white' : (formData.signalWord.includes('WARNING') ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500')}`} style={{ fontSize: `1.5rem` }}>
+                                <div className={`font-black uppercase tracking-widest flex items-center justify-center w-full h-full text-center ${formData.signalWord.includes('DANGER') ? 'bg-red-600 text-white' : (formData.signalWord.includes('WARNING') ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500')}`} style={{ fontSize: `1.5rem` }}>
                                     <span className="leading-none">{formData.signalWord}</span>
                                 </div>
                             )}
@@ -232,7 +238,7 @@
                     <div className="w-[60%] p-2 flex bg-blue-50">
                         <div className="w-1/2 pr-2 flex flex-col border-r border-blue-200">
                             <div className="flex items-center justify-start mb-1">
-                                <span className="font-bold uppercase bg-blue-800 text-white px-3 py-1 rounded flex items-center justify-center leading-none text-[10px]" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
+                                <span className="font-bold uppercase text-blue-900 leading-none text-[10px] underline" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
                                     PPE REQUIRED (อุปกรณ์ป้องกัน)
                                 </span>
                             </div>
@@ -259,7 +265,7 @@
                 tankId: 'T-0101',
                 productName: '',
                 unNumber: '',
-                signalWord: 'DANGER / อันตราย',
+                signalWord: 'DANGER อันตราย',
                 hazardStatements: '',
                 precautionaryStatements: '', 
                 selectedPPEList: [],
@@ -271,8 +277,10 @@
             const [scales, setScales] = useState({
                 tankId: 1, productName: 1, unNumber: 1, hazard: 1, precaution: 1, ppe: 1, ppeHeader: 1
             });
-
+            
+            const [savedLabels, setSavedLabels] = useState([]);
             const [showFontPanel, setShowFontPanel] = useState(false);
+            const [showLibrary, setShowLibrary] = useState(false);
             const [panelPosition, setPanelPosition] = useState({ x: 20, y: 100 }); 
             const isDragging = useRef(false);
             const dragOffset = useRef({ x: 0, y: 0 });
@@ -288,7 +296,51 @@
                 if (params.has('signal')) setFormData(prev => ({ ...prev, signalWord: params.get('signal') }));
                 if (params.has('hzd')) setFormData(prev => ({ ...prev, hazardStatements: decodeURIComponent(params.get('hzd')) }));
                 if (params.has('prec')) setFormData(prev => ({ ...prev, precautionaryStatements: decodeURIComponent(params.get('prec')) }));
+                
+                // Load saved templates
+                const saved = localStorage.getItem('ghs_templates');
+                if (saved) {
+                    try {
+                        setSavedLabels(JSON.parse(saved));
+                    } catch (e) {
+                        console.error("Failed to load templates", e);
+                    }
+                }
             }, []);
+
+            // Save Template
+            const handleSaveTemplate = () => {
+                if (!formData.productName) {
+                    alert("กรุณากรอกชื่อสารเคมีก่อนบันทึก");
+                    return;
+                }
+                const name = prompt("ตั้งชื่อแม่แบบ (Template Name):", formData.productName);
+                if (name) {
+                    const newTemplate = { id: Date.now(), name, data: { ...formData }, scales: { ...scales } };
+                    const updated = [newTemplate, ...savedLabels];
+                    setSavedLabels(updated);
+                    localStorage.setItem('ghs_templates', JSON.stringify(updated));
+                    alert("บันทึกในเครื่องนี้เรียบร้อย!");
+                }
+            };
+            
+            // Load Template
+            const handleLoadTemplate = (template) => {
+                if(confirm(`ต้องการโหลดข้อมูล "${template.name}" หรือไม่?`)) {
+                    setFormData(template.data);
+                    if(template.scales) setScales(template.scales);
+                    setShowLibrary(false);
+                }
+            };
+            
+            // Delete Template
+            const handleDeleteTemplate = (id) => {
+                if(confirm("ต้องการลบแม่แบบนี้หรือไม่?")) {
+                    const updated = savedLabels.filter(l => l.id !== id);
+                    setSavedLabels(updated);
+                    localStorage.setItem('ghs_templates', JSON.stringify(updated));
+                }
+            };
 
             // Drag Handlers
             const handleDragStart = (e) => {
@@ -345,47 +397,60 @@
                 setScales(prev => ({ ...prev, [key]: value }));
             };
 
-            const handleDownloadImage = async () => {
+            // --- OPEN IN NEW WINDOW (Robust Capture) ---
+            const handleOpenImage = async () => {
                 setIsGenerating(true);
-                await new Promise(resolve => setTimeout(resolve, 300)); 
+                
+                // Use the visible modal content
+                if (!isModalOpen) setIsModalOpen(true);
+                
+                // Force scroll to top to prevent html2canvas offset bugs
+                window.scrollTo(0,0);
+                
+                // Wait for layout stability
+                await new Promise(resolve => setTimeout(resolve, 500)); 
                 
                 try {
-                    // Fixed Container Strategy
-                    const originalElement = document.getElementById('tank-label-preview'); 
+                    // TARGET THE MODAL CONTENT - IT IS VISIBLE AND RENDERED
+                    const elementToCapture = document.getElementById('tank-label-modal-content');
+                    if (!elementToCapture) throw new Error("Element not found");
                     
-                    if (!originalElement) throw new Error("Element not found");
-
-                    const clone = originalElement.cloneNode(true);
+                    // Create a clone to strip transformations that might be on the modal or preview container
+                    // But here we capture the 'content' div which has no transforms itself, just dimensions.
+                    // We CLONE it to a fixed container at 0,0 to guarantee no scroll offsets.
+                    const clone = elementToCapture.cloneNode(true);
                     
+                    // Clean up the clone's styles to ensure it's flat and static
                     clone.style.transform = 'none';
                     clone.style.margin = '0';
                     clone.style.boxShadow = 'none';
+                    clone.style.border = '4px solid black'; // Ensure border
                     
+                    // Force dimensions to match standard
                     const width = 1200;
-                    const height = 800; 
+                    const height = 800;
+                    clone.style.width = width + 'px';
+                    clone.style.height = height + 'px';
                     
                     const container = document.createElement('div');
                     container.style.position = 'fixed';
-                    container.style.top = '-10000px';
-                    container.style.left = '-10000px';
-                    container.style.width = `${width}px`;
-                    container.style.height = `${height}px`;
-                    container.style.zIndex = '-1';
-                    container.style.overflow = 'hidden';
-                    
-                    clone.style.width = '100%';
-                    clone.style.height = '100%';
-                    
+                    container.style.top = '0';
+                    container.style.left = '0';
+                    container.style.width = width + 'px';
+                    container.style.height = height + 'px';
+                    container.style.zIndex = '999999';
+                    container.style.backgroundColor = '#ffffff'; // White background behind label
                     container.appendChild(clone);
                     document.body.appendChild(container);
-                    
+
+                    // Capture the clone
                     const canvas = await html2canvas(clone, { 
                         scale: 2, 
                         useCORS: true, 
                         logging: false, 
+                        backgroundColor: '#ffffff',
                         width: width,
                         height: height,
-                        backgroundColor: '#ffffff',
                         windowWidth: width,
                         windowHeight: height,
                         scrollX: 0,
@@ -394,16 +459,45 @@
                         y: 0
                     });
                     
+                    // Cleanup
                     document.body.removeChild(container);
 
-                    const link = document.createElement('a');
-                    link.download = `GHS-Label-${formData.tankId || 'Export'}.png`;
-                    link.href = canvas.toDataURL('image/png', 1.0);
-                    link.click();
+                    const imgData = canvas.toDataURL('image/png');
+
+                    // Open New Window
+                    const newWindow = window.open('', '_blank');
+                    if (newWindow) {
+                        newWindow.document.write(`
+                            <html>
+                                <head>
+                                    <title>GHS Label Image - ${formData.tankId || 'Image'}</title>
+                                    <style>
+                                        body { margin: 0; padding: 20px; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
+                                        img { max-width: 90%; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 10px solid white; margin-bottom: 20px; }
+                                        .instructions { color: white; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 15px 30px; border-radius: 50px; text-align: center; }
+                                    </style>
+                                </head>
+                                <body>
+                                    <img src="${imgData}" alt="GHS Label" />
+                                    <div class="instructions">
+                                        👉 <strong>คลิกขวาที่รูปภาพ</strong> แล้วเลือก <strong>"บันทึกรูปภาพเป็น..." (Save Image As...)</strong>
+                                    </div>
+                                </body>
+                            </html>
+                        `);
+                        newWindow.document.close();
+                    } else {
+                        alert('หน้าต่างใหม่ถูกบล็อก! โปรดอนุญาต Pop-up สำหรับเว็บไซต์นี้');
+                    }
+                    
+                    // Restore state: If modal wasn't open originally, close it.
+                    if (!wasModalOpen) {
+                        setIsModalOpen(false);
+                    }
 
                 } catch (error) {
-                    console.error("Image Error:", error);
-                    alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
+                    console.error("Error:", error);
+                    alert("เกิดข้อผิดพลาดในการสร้างภาพ");
                 } finally {
                     setIsGenerating(false);
                 }
@@ -412,7 +506,7 @@
             return (
                 <div className="min-h-screen relative pb-10">
                     
-                    {/* Header Bar (Orange Theme) */}
+                    {/* Header Bar */}
                     <div className="no-print bg-white/80 backdrop-blur-md shadow-sm border-b border-orange-100 sticky top-0 z-50">
                         <div className="max-w-7xl mx-auto p-3 flex flex-col md:flex-row justify-between items-center gap-3">
                             <h1 className="text-2xl font-bold text-orange-500 flex items-center gap-2 kawaii-font">
@@ -421,29 +515,22 @@
                             </h1>
                             
                             <div className="flex flex-wrap items-center gap-2 justify-center relative">
-                                <button 
-                                    onClick={() => setShowFontPanel(!showFontPanel)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font
-                                    ${showFontPanel ? 'bg-sky-100 border-sky-400 text-sky-700' : 'bg-white border-gray-200 text-gray-600 hover:border-sky-300 hover:bg-sky-50'}`}
-                                >
+                                <button onClick={() => setShowLibrary(true)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font bg-yellow-100 border-yellow-400 text-yellow-700 hover:bg-yellow-200">
+                                    {Icons.Folder} คลังป้าย (ส่วนตัว)
+                                </button>
+                                
+                                <button onClick={handleSaveTemplate} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font bg-white border-green-400 text-green-700 hover:bg-green-50">
+                                    {Icons.SaveDisk} บันทึก
+                                </button>
+                                
+                                <button onClick={() => setShowFontPanel(!showFontPanel)} className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font ${showFontPanel ? 'bg-sky-100 border-sky-400 text-sky-700' : 'bg-white border-gray-200 text-gray-600 hover:border-sky-300 hover:bg-sky-50'}`}>
                                     {Icons.Type} ปรับขนาดอักษร
                                 </button>
 
                                 {showFontPanel && (
-                                    <div 
-                                        className="fixed bg-white p-5 shadow-2xl border-2 border-orange-100 rounded-3xl z-[9999] w-80 grid grid-cols-1 gap-1 animate-fade-in-down"
-                                        style={{ 
-                                            left: `${panelPosition.x}px`, 
-                                            top: `${panelPosition.y}px`,
-                                        }}
-                                    >
-                                        <div 
-                                            className="flex justify-between items-center border-b border-dashed pb-2 mb-2 draggable-panel cursor-move"
-                                            onMouseDown={handleDragStart}
-                                        >
-                                            <h3 className="font-bold text-orange-500 text-sm kawaii-font flex items-center gap-2">
-                                                {Icons.Move} ปรับขนาดข้อความ
-                                            </h3>
+                                    <div className="fixed bg-white p-5 shadow-2xl border-2 border-orange-100 rounded-3xl z-[9999] w-80 grid grid-cols-1 gap-1 animate-fade-in-down" style={{ left: `${panelPosition.x}px`, top: `${panelPosition.y}px` }}>
+                                        <div className="flex justify-between items-center border-b border-dashed pb-2 mb-2 draggable-panel" onMouseDown={handleDragStart}>
+                                            <h3 className="font-bold text-orange-500 text-sm kawaii-font flex items-center gap-2">{Icons.Move} ปรับขนาดข้อความ</h3>
                                             <button onClick={() => setShowFontPanel(false)} className="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 p-1 rounded-full transition">{Icons.Close}</button>
                                         </div>
                                         <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -463,37 +550,19 @@
 
                     <div className="max-w-7xl mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
                         
-                        {/* LEFT: INPUT FORM (Orange Theme) */}
+                        {/* LEFT: INPUT */}
                         <div className="no-print w-full lg:w-1/3 bg-white p-6 rounded-3xl shadow-xl shadow-orange-100/50 border border-orange-50 space-y-6 h-fit overflow-y-auto max-h-[85vh]">
-                            
-                            {/* Section 1 */}
                             <div className="space-y-4">
-                                <h3 className="font-bold text-orange-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-orange-100 pb-2">
-                                    <span className="bg-orange-100 text-orange-600 rounded-lg p-1 text-sm">01</span> ข้อมูลทั่วไป
-                                </h3>
+                                <h3 className="font-bold text-orange-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-orange-100 pb-2"><span className="bg-orange-100 text-orange-600 rounded-lg p-1 text-sm">01</span> ข้อมูลทั่วไป</h3>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-400 ml-1">รหัสถัง</label>
-                                        <input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.tankId} onChange={e => setFormData({...formData, tankId: e.target.value})} placeholder="T-0101" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-400 ml-1">หมายเลข UN</label>
-                                        <input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.unNumber} onChange={e => setFormData({...formData, unNumber: e.target.value})} placeholder="1830" />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="text-xs font-bold text-gray-400 ml-1">ชื่อสารเคมี</label>
-                                        <input type="text" className="w-full p-2.5 rounded-xl bg-orange-50 font-bold text-gray-700" value={formData.productName} onChange={e => setFormData({...formData, productName: e.target.value})} placeholder="SULFURIC ACID (กรดซัลฟิวริก)" />
-                                    </div>
+                                    <div><label className="text-xs font-bold text-gray-400 ml-1">รหัสถัง</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.tankId} onChange={e => setFormData({...formData, tankId: e.target.value})} placeholder="T-0101" /></div>
+                                    <div><label className="text-xs font-bold text-gray-400 ml-1">หมายเลข UN</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.unNumber} onChange={e => setFormData({...formData, unNumber: e.target.value})} placeholder="1830" /></div>
+                                    <div className="col-span-2"><label className="text-xs font-bold text-gray-400 ml-1">ชื่อสารเคมี</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50 font-bold text-gray-700" value={formData.productName} onChange={e => setFormData({...formData, productName: e.target.value})} placeholder="SULFURIC ACID" /></div>
                                 </div>
                             </div>
 
-                            {/* Section 2 */}
-                             <div className="space-y-4">
-                                <h3 className="font-bold text-sky-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-sky-100 pb-2">
-                                    <span className="bg-sky-100 text-sky-600 rounded-lg p-1 text-sm">02</span> ข้อมูลอันตราย
-                                </h3>
-                                
-                                {/* Image Upload with Clear Button */}
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-sky-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-sky-100 pb-2"><span className="bg-sky-100 text-sky-600 rounded-lg p-1 text-sm">02</span> ข้อมูลอันตราย</h3>
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 ml-1 mb-1 block">รูปสัญลักษณ์ (Pictogram)</label>
                                     <div className="flex gap-2">
@@ -502,15 +571,9 @@
                                             <span className="mt-1 text-xs font-bold text-sky-400">{formData.pictogramImage ? "เปลี่ยนรูป" : "อัปโหลดรูป"}</span>
                                             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'pictogramImage')} />
                                         </label>
-                                        {formData.pictogramImage && (
-                                            <button onClick={() => clearImage('pictogramImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors" title="ลบรูป">
-                                                {Icons.Trash}
-                                            </button>
-                                        )}
+                                        {formData.pictogramImage && <button onClick={() => clearImage('pictogramImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors">{Icons.Trash}</button>}
                                     </div>
                                 </div>
-                                
-                                {/* NFPA Inputs */}
                                 <div className="bg-sky-50 p-3 rounded-xl">
                                     <label className="text-xs font-bold text-gray-400 mb-2 block text-center">รหัส NFPA</label>
                                     <div className="grid grid-cols-4 gap-2">
@@ -522,121 +585,67 @@
                                         ))}
                                     </div>
                                 </div>
-
-                                <div className="mb-1">
-                                    <label className="text-xs font-bold text-gray-400 ml-1">คำสัญญาณ</label>
-                                    <select className="w-full p-2.5 rounded-xl bg-sky-50 font-bold text-gray-600" value={formData.signalWord} onChange={e => setFormData({...formData, signalWord: e.target.value})}>
-                                        <option value="DANGER อันตราย">🔴 DANGER / อันตราย</option> 
-                                        <option value="WARNING ระวัง">🟠 WARNING / ระวัง</option> 
-                                        <option value="NONE ไม่มี">⚪ NONE / ไม่มี</option>
-                                    </select>
-                                </div>
-
-                                <div className="mb-1">
-                                    <label className="text-xs font-bold text-gray-400 ml-1">ข้อความแสดงความเป็นอันตราย</label>
-                                    <textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="4" value={formData.hazardStatements} onChange={e => setFormData({...formData, hazardStatements: e.target.value})} placeholder="ระบุข้อความอันตราย..."></textarea>
-                                </div>
-                                
-                                <div>
-                                    <label className="text-xs font-bold text-gray-400 ml-1">ข้อควรระวัง</label>
-                                    <textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="3" value={formData.precautionaryStatements} onChange={e => setFormData({...formData, precautionaryStatements: e.target.value})} placeholder="ระบุข้อควรระวัง..."></textarea>
-                                </div>
+                                <div className="mb-1"><label className="text-xs font-bold text-gray-400 ml-1">คำสัญญาณ</label><select className="w-full p-2.5 rounded-xl bg-sky-50 font-bold text-gray-600" value={formData.signalWord} onChange={e => setFormData({...formData, signalWord: e.target.value})}><option value="DANGER อันตราย">🔴 DANGER อันตราย</option><option value="WARNING ระวัง">🟠 WARNING ระวัง</option><option value="NONE ไม่มี">⚪ NONE ไม่มี</option></select></div>
+                                <div className="mb-1"><label className="text-xs font-bold text-gray-400 ml-1">ข้อความอันตราย</label><textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="4" value={formData.hazardStatements} onChange={e => setFormData({...formData, hazardStatements: e.target.value})}></textarea></div>
+                                <div><label className="text-xs font-bold text-gray-400 ml-1">ข้อควรระวัง</label><textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="3" value={formData.precautionaryStatements} onChange={e => setFormData({...formData, precautionaryStatements: e.target.value})}></textarea></div>
                             </div>
 
-                            {/* Section 3 */}
                             <div className="space-y-4">
-                                <h3 className="font-bold text-amber-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-amber-100 pb-2">
-                                    <span className="bg-amber-100 text-amber-600 rounded-lg p-1 text-sm">03</span> ความปลอดภัย
-                                </h3>
-                                
-                                {/* Removed Extinguishing Media Input */}
-
+                                <h3 className="font-bold text-amber-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-amber-100 pb-2"><span className="bg-amber-100 text-amber-600 rounded-lg p-1 text-sm">03</span> ความปลอดภัย</h3>
                                 <div className="bg-orange-50 p-4 rounded-2xl">
                                     <label className="text-xs font-bold text-orange-400 mb-2 block">อุปกรณ์ป้องกัน (PPE)</label>
                                     <div className="space-y-1 mb-3">
-                                        {PPE_LIST.map(item => (
-                                            <label key={item} className="flex items-center gap-2 text-sm cursor-pointer hover:text-orange-700 transition">
-                                                <input type="checkbox" checked={formData.selectedPPEList.includes(item)} onChange={() => toggleSelection('selectedPPEList', item)} className="accent-orange-500 w-4 h-4 rounded" /> 
-                                                <span className="text-gray-600">{item}</span>
-                                            </label>
-                                        ))}
+                                        {PPE_LIST.map(item => (<label key={item} className="flex items-center gap-2 text-sm cursor-pointer hover:text-orange-700 transition"><input type="checkbox" checked={formData.selectedPPEList.includes(item)} onChange={() => toggleSelection('selectedPPEList', item)} className="accent-orange-500 w-4 h-4 rounded" /><span className="text-gray-600">{item}</span></label>))}
                                     </div>
-                                    
-                                    {/* PPE Upload with Remove Button */}
                                     <div className="flex gap-2">
                                         <label className="flex-grow flex flex-col items-center justify-center p-3 border-2 border-dashed border-orange-200 bg-white rounded-xl cursor-pointer hover:bg-orange-100 transition-colors">
-                                            <div className="text-orange-300 mb-1">{Icons.Upload}</div>
-                                            <span className="text-xs font-bold text-orange-400">{formData.ppeImage ? "เปลี่ยนรูป PPE" : "อัปโหลดรูป PPE"}</span>
-                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'ppeImage')} />
+                                            <div className="text-orange-300 mb-1">{Icons.Upload}</div><span className="text-xs font-bold text-orange-400">{formData.ppeImage ? "เปลี่ยนรูป PPE" : "อัปโหลดรูป PPE"}</span><input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'ppeImage')} />
                                         </label>
-                                        {formData.ppeImage && (
-                                            <button onClick={() => clearImage('ppeImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors" title="ลบรูป">
-                                                {Icons.Trash}
-                                            </button>
-                                        )}
+                                        {formData.ppeImage && <button onClick={() => clearImage('ppeImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors">{Icons.Trash}</button>}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* RIGHT: PREVIEW AREA */}
+                        {/* RIGHT: PREVIEW */}
                         <div className="w-full lg:w-2/3 flex flex-col items-center pt-4">
-                            <div className="no-print mb-4 flex items-center gap-2 text-gray-400 text-sm font-bold bg-white px-4 py-1 rounded-full shadow-sm animate-bounce">
-                                คลิกที่ป้ายเพื่อขยายและดาวน์โหลด
-                            </div>
-                            
+                            <div className="no-print mb-4 flex items-center gap-2 text-gray-400 text-sm font-bold bg-white px-4 py-1 rounded-full shadow-sm animate-bounce">คลิกที่ป้ายเพื่อขยายและบันทึกภาพ</div>
                             <div className="preview-container relative w-full flex justify-center group">
-                                <GHSLabel 
-                                    id="tank-label-preview"
-                                    formData={formData} 
-                                    scales={scales} 
-                                    onClick={() => setIsModalOpen(true)}
-                                />
-                                <div className="overlay absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg">
-                                    <div className="bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 transform scale-0 group-hover:scale-100 transition-transform duration-300">
-                                        {Icons.Maximize} คลิกเพื่อขยาย
-                                    </div>
-                                </div>
+                                <GHSLabel id="tank-label-preview" formData={formData} scales={scales} onClick={() => setIsModalOpen(true)} />
+                                <div className="overlay absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg"><div className="bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 transform scale-0 group-hover:scale-100 transition-transform duration-300">{Icons.Maximize} คลิกเพื่อขยาย</div></div>
                             </div>
                         </div>
                     </div>
 
-                    {/* MODAL FOR EXPANDED VIEW & DOWNLOAD */}
-                    {isModalOpen && (
+                    {/* MODAL & LIBRARY */}
+                    {showLibrary && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden relative">
-                                
-                                {/* Modal Header */}
-                                <div className="p-4 border-b flex justify-between items-center bg-gray-50 z-10 relative"> 
-                                    <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2 kawaii-font">
-                                        {Icons.ImageIcon} ตัวอย่างป้าย
-                                    </h2>
-                                    <div className="flex gap-2">
-                                        <button onClick={handleDownloadImage} disabled={isGenerating} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm kawaii-font disabled:opacity-50">
-                                            {Icons.Download} {isGenerating ? 'กำลังบันทึก...' : 'บันทึกรูปภาพ'}
-                                        </button>
-                                        <button onClick={() => setIsModalOpen(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-600 p-2 rounded-full transition">
-                                            {Icons.Close}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Modal Content (Scrollable) */}
-                                <div className="p-4 md:p-8 overflow-y-auto bg-gray-100 flex-grow flex justify-center items-start">
-                                    <div className="shadow-2xl w-full">
-                                        <GHSLabel 
-                                            id="tank-label-modal-content"
-                                            formData={formData} 
-                                            scales={scales} 
-                                            isModal={true}
-                                            // No click handler in modal
-                                        />
-                                    </div>
-                                </div>
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden relative">
+                                <div className="p-4 border-b bg-yellow-50 flex justify-between items-center"><h3 className="font-bold text-yellow-700 text-lg kawaii-font">คลังป้าย (ส่วนตัว)</h3><button onClick={() => setShowLibrary(false)} className="text-gray-400 hover:text-red-500">{Icons.Close}</button></div>
+                                <div className="p-4 overflow-y-auto flex-grow bg-white">{savedLabels.length === 0 ? (<div className="text-center text-gray-400 py-10">ไม่มีป้ายที่บันทึกไว้</div>) : (<div className="space-y-2">{savedLabels.map(template => (<div key={template.id} className="flex justify-between items-center p-3 border rounded-xl hover:bg-gray-50 transition"><div><div className="font-bold text-gray-700">{template.name}</div><div className="text-xs text-gray-400">{template.data.tankId} • {new Date(template.id).toLocaleDateString()}</div></div><div className="flex gap-2"><button onClick={() => handleLoadTemplate(template)} className="px-3 py-1 bg-green-100 text-green-600 rounded-lg text-xs font-bold hover:bg-green-200">เลือก</button><button onClick={() => handleDeleteTemplate(template.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg">{Icons.Trash}</button></div></div>))}</div>)}</div>
                             </div>
                         </div>
                     )}
 
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden relative">
+                                <div className="p-4 border-b flex justify-between items-center bg-gray-50 z-10 relative"> 
+                                    <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2 kawaii-font">{Icons.ImageIcon} ตัวอย่างป้าย</h2>
+                                    <div className="flex gap-2">
+                                        {/* Updated: Open in New Window Button */}
+                                        <button onClick={handleOpenImage} disabled={isGenerating} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm kawaii-font disabled:opacity-50">
+                                            {Icons.NewWindow} {isGenerating ? 'กำลังสร้าง...' : 'เปิดรูปในหน้าต่างใหม่'}
+                                        </button>
+                                        <button onClick={() => setIsModalOpen(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-600 p-2 rounded-full transition">{Icons.Close}</button>
+                                    </div>
+                                </div>
+                                <div className="p-4 md:p-8 overflow-y-auto bg-gray-100 flex-grow flex justify-center items-start modal-overlay">
+                                    <div className="shadow-2xl w-full"><GHSLabel id="tank-label-modal-content" formData={formData} scales={scales} isModal={true} /></div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
