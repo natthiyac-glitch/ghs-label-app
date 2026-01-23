@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHS Label Generator</title>
+    <title>ระบบสร้างป้าย GHS</title>
     
     <!-- 1. Load Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -16,7 +16,7 @@
     
     <!-- Google Fonts: Fredoka (Rounded) & Sarabun (Thai) -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600&family=Sarabun:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600&family=Sarabun:wght@300;400;600;700&display=swap');
         
         body { 
             font-family: 'Sarabun', sans-serif; 
@@ -26,7 +26,7 @@
             background-size: 20px 20px;
         }
         
-        h1, h2, h3, .kawaii-font { font-family: 'Fredoka', sans-serif; }
+        h1, h2, h3, .kawaii-font { font-family: 'Sarabun', sans-serif; font-weight: 600; }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
@@ -171,7 +171,7 @@
                         <span className="font-black uppercase leading-none" style={{ fontSize: `${2.2 * scales.productName}rem` }}>{formData.productName || "CHEMICAL NAME"}</span>
                     </div>
                     <div className="w-[20%] flex flex-col items-center justify-center p-1 bg-gray-100">
-                        <span className="font-bold text-gray-500 uppercase leading-none mb-1" style={{ fontSize: `${0.7 * scales.unNumber}rem` }}>UN Number</span>
+                        <span className="font-bold text-gray-500 text-[10px] uppercase leading-none mb-1" style={{ fontSize: `${0.7 * scales.unNumber}rem` }}>UN Number / หมายเลข UN</span>
                         <span className="font-black font-mono leading-none" style={{ fontSize: `${2 * scales.unNumber}rem` }}>{formData.unNumber || "----"}</span>
                     </div>
                 </div>
@@ -193,10 +193,10 @@
                             </div>
                         </div>
 
-                        {/* Lower: Signal Word (Updated Font Size) */}
+                        {/* Lower: Signal Word */}
                         <div className="h-[45%] flex items-center justify-center p-2 overflow-hidden relative bg-white">
                              {formData.signalWord && (
-                                <div className={`font-black uppercase tracking-widest px-2 py-1 rounded flex items-center justify-center w-full h-auto text-center ${formData.signalWord === 'DANGER' ? 'bg-red-600 text-white' : (formData.signalWord === 'WARNING' ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500')}`} style={{ fontSize: `1.5rem` }}>
+                                <div className={`font-black uppercase tracking-widest px-2 py-1 rounded flex items-center justify-center w-full h-auto text-center ${formData.signalWord.includes('DANGER') ? 'bg-red-600 text-white' : (formData.signalWord.includes('WARNING') ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500')}`} style={{ fontSize: `1.5rem` }}>
                                     <span className="leading-none">{formData.signalWord}</span>
                                 </div>
                             )}
@@ -206,13 +206,13 @@
                     <div className="w-[70%] p-4 flex flex-col justify-start overflow-hidden relative">
                         {/* Hazard Statements */}
                         <div className="mb-4">
-                            <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.hazard}rem` }}>HAZARD STATEMENTS:</h3>
+                            <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.hazard}rem` }}>HAZARD STATEMENTS (ความเป็นอันตราย):</h3>
                             <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.hazard}rem` }}>{formData.hazardStatements || "..."}</p>
                         </div>
 
                         {/* Precautionary Statements */}
                         <div>
-                            <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.precaution}rem` }}>PRECAUTIONARY STATEMENTS:</h3>
+                            <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.precaution}rem` }}>PRECAUTIONARY STATEMENTS (ข้อควรระวัง):</h3>
                             <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.precaution}rem` }}>{formData.precautionaryStatements || "..."}</p>
                         </div>
                     </div>
@@ -224,7 +224,7 @@
                     <div className="w-[40%] border-r-4 border-black p-1 flex flex-col bg-white items-center justify-center relative">
                          {formData.pictogramImage ? 
                             <img src={formData.pictogramImage} className="max-h-full max-w-full object-contain" /> : 
-                            <div className="text-gray-300 text-[10px] text-center w-full h-full flex items-center justify-center border border-dashed border-gray-200">Pictogram</div>
+                            <div className="text-gray-300 text-[10px] text-center w-full h-full flex items-center justify-center border border-dashed border-gray-200">รูปสัญลักษณ์</div>
                         }
                     </div>
 
@@ -232,8 +232,8 @@
                     <div className="w-[60%] p-2 flex bg-blue-50">
                         <div className="w-1/2 pr-2 flex flex-col border-r border-blue-200">
                             <div className="flex items-center justify-start mb-1">
-                                <span className="font-bold uppercase bg-blue-800 text-white px-3 py-1 rounded flex items-center justify-center leading-none" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
-                                    PPE Required
+                                <span className="font-bold uppercase bg-blue-800 text-white px-3 py-1 rounded flex items-center justify-center leading-none text-[10px]" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
+                                    PPE REQUIRED (อุปกรณ์ป้องกัน)
                                 </span>
                             </div>
                             <div className="flex-grow overflow-hidden pl-1">
@@ -245,7 +245,7 @@
                         <div className="w-1/2 pl-2 flex items-center justify-center relative">
                             {formData.ppeImage ? 
                                 <img src={formData.ppeImage} className="max-h-full max-w-full object-contain" /> : 
-                                <div className="text-blue-300 text-xs text-center border-2 border-dashed border-blue-200 w-full h-full flex items-center justify-center">PPE Image</div>
+                                <div className="text-blue-300 text-xs text-center border-2 border-dashed border-blue-200 w-full h-full flex items-center justify-center">รูป PPE</div>
                             }
                         </div>
                     </div>
@@ -259,7 +259,7 @@
                 tankId: 'T-0101',
                 productName: '',
                 unNumber: '',
-                signalWord: 'DANGER',
+                signalWord: 'DANGER / อันตราย',
                 hazardStatements: '',
                 precautionaryStatements: '', 
                 selectedPPEList: [],
@@ -417,7 +417,7 @@
                         <div className="max-w-7xl mx-auto p-3 flex flex-col md:flex-row justify-between items-center gap-3">
                             <h1 className="text-2xl font-bold text-orange-500 flex items-center gap-2 kawaii-font">
                                 <span className="bg-orange-100 p-2 rounded-full">{Icons.Settings}</span>
-                                GHS Label Maker
+                                ระบบสร้างป้าย GHS
                             </h1>
                             
                             <div className="flex flex-wrap items-center gap-2 justify-center relative">
@@ -426,7 +426,7 @@
                                     className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font
                                     ${showFontPanel ? 'bg-sky-100 border-sky-400 text-sky-700' : 'bg-white border-gray-200 text-gray-600 hover:border-sky-300 hover:bg-sky-50'}`}
                                 >
-                                    {Icons.Type} Adjust Font
+                                    {Icons.Type} ปรับขนาดอักษร
                                 </button>
 
                                 {showFontPanel && (
@@ -442,18 +442,18 @@
                                             onMouseDown={handleDragStart}
                                         >
                                             <h3 className="font-bold text-orange-500 text-sm kawaii-font flex items-center gap-2">
-                                                {Icons.Move} Size Adjustment
+                                                {Icons.Move} ปรับขนาดข้อความ
                                             </h3>
                                             <button onClick={() => setShowFontPanel(false)} className="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 p-1 rounded-full transition">{Icons.Close}</button>
                                         </div>
                                         <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                                            <FontSlider label="Tank ID" value={scales.tankId} onChange={v => updateScale('tankId', v)} />
-                                            <FontSlider label="Chemical Name" value={scales.productName} onChange={v => updateScale('productName', v)} />
-                                            <FontSlider label="UN Number" value={scales.unNumber} onChange={v => updateScale('unNumber', v)} />
-                                            <FontSlider label="Hazard Statements" value={scales.hazard} onChange={v => updateScale('hazard', v)} />
-                                            <FontSlider label="Precautionary" value={scales.precaution} onChange={v => updateScale('precaution', v)} />
-                                            <FontSlider label="PPE Header" value={scales.ppeHeader} onChange={v => updateScale('ppeHeader', v)} />
-                                            <FontSlider label="PPE Items" value={scales.ppe} onChange={v => updateScale('ppe', v)} />
+                                            <FontSlider label="รหัสถัง (Tank ID)" value={scales.tankId} onChange={v => updateScale('tankId', v)} />
+                                            <FontSlider label="ชื่อสารเคมี" value={scales.productName} onChange={v => updateScale('productName', v)} />
+                                            <FontSlider label="หมายเลข UN" value={scales.unNumber} onChange={v => updateScale('unNumber', v)} />
+                                            <FontSlider label="ข้อความอันตราย" value={scales.hazard} onChange={v => updateScale('hazard', v)} />
+                                            <FontSlider label="ข้อควรระวัง" value={scales.precaution} onChange={v => updateScale('precaution', v)} />
+                                            <FontSlider label="หัวข้อ PPE" value={scales.ppeHeader} onChange={v => updateScale('ppeHeader', v)} />
+                                            <FontSlider label="รายการ PPE" value={scales.ppe} onChange={v => updateScale('ppe', v)} />
                                         </div>
                                     </div>
                                 )}
@@ -469,20 +469,20 @@
                             {/* Section 1 */}
                             <div className="space-y-4">
                                 <h3 className="font-bold text-orange-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-orange-100 pb-2">
-                                    <span className="bg-orange-100 text-orange-600 rounded-lg p-1 text-sm">01</span> General Info
+                                    <span className="bg-orange-100 text-orange-600 rounded-lg p-1 text-sm">01</span> ข้อมูลทั่วไป
                                 </h3>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="text-xs font-bold text-gray-400 ml-1">Tank ID</label>
+                                        <label className="text-xs font-bold text-gray-400 ml-1">รหัสถัง</label>
                                         <input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.tankId} onChange={e => setFormData({...formData, tankId: e.target.value})} placeholder="T-0101" />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-gray-400 ml-1">UN Number</label>
+                                        <label className="text-xs font-bold text-gray-400 ml-1">หมายเลข UN</label>
                                         <input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.unNumber} onChange={e => setFormData({...formData, unNumber: e.target.value})} placeholder="1830" />
                                     </div>
                                     <div className="col-span-2">
-                                        <label className="text-xs font-bold text-gray-400 ml-1">Product Name</label>
-                                        <input type="text" className="w-full p-2.5 rounded-xl bg-orange-50 font-bold text-gray-700" value={formData.productName} onChange={e => setFormData({...formData, productName: e.target.value})} placeholder="SULFURIC ACID" />
+                                        <label className="text-xs font-bold text-gray-400 ml-1">ชื่อสารเคมี</label>
+                                        <input type="text" className="w-full p-2.5 rounded-xl bg-orange-50 font-bold text-gray-700" value={formData.productName} onChange={e => setFormData({...formData, productName: e.target.value})} placeholder="SULFURIC ACID (กรดซัลฟิวริก)" />
                                     </div>
                                 </div>
                             </div>
@@ -490,20 +490,20 @@
                             {/* Section 2 */}
                              <div className="space-y-4">
                                 <h3 className="font-bold text-sky-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-sky-100 pb-2">
-                                    <span className="bg-sky-100 text-sky-600 rounded-lg p-1 text-sm">02</span> Hazards
+                                    <span className="bg-sky-100 text-sky-600 rounded-lg p-1 text-sm">02</span> ข้อมูลอันตราย
                                 </h3>
                                 
                                 {/* Image Upload with Clear Button */}
                                 <div>
-                                    <label className="text-xs font-bold text-gray-400 ml-1 mb-1 block">Pictogram</label>
+                                    <label className="text-xs font-bold text-gray-400 ml-1 mb-1 block">รูปสัญลักษณ์ (Pictogram)</label>
                                     <div className="flex gap-2">
                                         <label className="flex-grow flex flex-col items-center justify-center p-4 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer hover:bg-sky-50 transition-colors group">
                                             <div className="text-sky-300 group-hover:text-sky-500 transition-colors transform group-hover:scale-110 duration-300">{Icons.Upload}</div>
-                                            <span className="mt-1 text-xs font-bold text-sky-400">{formData.pictogramImage ? "Change Image" : "Upload Image"}</span>
+                                            <span className="mt-1 text-xs font-bold text-sky-400">{formData.pictogramImage ? "เปลี่ยนรูป" : "อัปโหลดรูป"}</span>
                                             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'pictogramImage')} />
                                         </label>
                                         {formData.pictogramImage && (
-                                            <button onClick={() => clearImage('pictogramImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors" title="Remove Image">
+                                            <button onClick={() => clearImage('pictogramImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors" title="ลบรูป">
                                                 {Icons.Trash}
                                             </button>
                                         )}
@@ -512,7 +512,7 @@
                                 
                                 {/* NFPA Inputs */}
                                 <div className="bg-sky-50 p-3 rounded-xl">
-                                    <label className="text-xs font-bold text-gray-400 mb-2 block text-center">NFPA Codes</label>
+                                    <label className="text-xs font-bold text-gray-400 mb-2 block text-center">รหัส NFPA</label>
                                     <div className="grid grid-cols-4 gap-2">
                                         {['nfpaHealth', 'nfpaFlammability', 'nfpaInstability', 'nfpaSpecial'].map((f, i) => (
                                             <div key={f} className="text-center">
@@ -523,23 +523,36 @@
                                     </div>
                                 </div>
 
-                                <select className="w-full p-2.5 rounded-xl bg-sky-50 font-bold text-gray-600" value={formData.signalWord} onChange={e => setFormData({...formData, signalWord: e.target.value})}>
-                                    <option value="DANGER">🔴 DANGER</option> <option value="WARNING">🟠 WARNING</option> <option value="">⚪ NONE</option>
-                                </select>
-                                <textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="4" value={formData.hazardStatements} onChange={e => setFormData({...formData, hazardStatements: e.target.value})} placeholder="Hazard Statements..."></textarea>
-                                <textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="3" value={formData.precautionaryStatements} onChange={e => setFormData({...formData, precautionaryStatements: e.target.value})} placeholder="Precautionary Statements..."></textarea>
+                                <div className="mb-1">
+                                    <label className="text-xs font-bold text-gray-400 ml-1">คำสัญญาณ</label>
+                                    <select className="w-full p-2.5 rounded-xl bg-sky-50 font-bold text-gray-600" value={formData.signalWord} onChange={e => setFormData({...formData, signalWord: e.target.value})}>
+                                        <option value="DANGER / อันตราย">🔴 DANGER / อันตราย</option> 
+                                        <option value="WARNING / ระวัง">🟠 WARNING / ระวัง</option> 
+                                        <option value="NONE / ไม่มี">⚪ NONE / ไม่มี</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-1">
+                                    <label className="text-xs font-bold text-gray-400 ml-1">ข้อความแสดงความเป็นอันตราย</label>
+                                    <textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="4" value={formData.hazardStatements} onChange={e => setFormData({...formData, hazardStatements: e.target.value})} placeholder="ระบุข้อความอันตราย..."></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label className="text-xs font-bold text-gray-400 ml-1">ข้อควรระวัง</label>
+                                    <textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="3" value={formData.precautionaryStatements} onChange={e => setFormData({...formData, precautionaryStatements: e.target.value})} placeholder="ระบุข้อควรระวัง..."></textarea>
+                                </div>
                             </div>
 
                             {/* Section 3 */}
                             <div className="space-y-4">
                                 <h3 className="font-bold text-amber-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-amber-100 pb-2">
-                                    <span className="bg-amber-100 text-amber-600 rounded-lg p-1 text-sm">03</span> Safety
+                                    <span className="bg-amber-100 text-amber-600 rounded-lg p-1 text-sm">03</span> ความปลอดภัย
                                 </h3>
                                 
                                 {/* Removed Extinguishing Media Input */}
 
                                 <div className="bg-orange-50 p-4 rounded-2xl">
-                                    <label className="text-xs font-bold text-orange-400 mb-2 block">PPE Required</label>
+                                    <label className="text-xs font-bold text-orange-400 mb-2 block">อุปกรณ์ป้องกัน (PPE)</label>
                                     <div className="space-y-1 mb-3">
                                         {PPE_LIST.map(item => (
                                             <label key={item} className="flex items-center gap-2 text-sm cursor-pointer hover:text-orange-700 transition">
@@ -553,11 +566,11 @@
                                     <div className="flex gap-2">
                                         <label className="flex-grow flex flex-col items-center justify-center p-3 border-2 border-dashed border-orange-200 bg-white rounded-xl cursor-pointer hover:bg-orange-100 transition-colors">
                                             <div className="text-orange-300 mb-1">{Icons.Upload}</div>
-                                            <span className="text-xs font-bold text-orange-400">{formData.ppeImage ? "Change PPE Image" : "Upload PPE Image"}</span>
+                                            <span className="text-xs font-bold text-orange-400">{formData.ppeImage ? "เปลี่ยนรูป PPE" : "อัปโหลดรูป PPE"}</span>
                                             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'ppeImage')} />
                                         </label>
                                         {formData.ppeImage && (
-                                            <button onClick={() => clearImage('ppeImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors" title="Remove Image">
+                                            <button onClick={() => clearImage('ppeImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors" title="ลบรูป">
                                                 {Icons.Trash}
                                             </button>
                                         )}
@@ -569,7 +582,7 @@
                         {/* RIGHT: PREVIEW AREA */}
                         <div className="w-full lg:w-2/3 flex flex-col items-center pt-4">
                             <div className="no-print mb-4 flex items-center gap-2 text-gray-400 text-sm font-bold bg-white px-4 py-1 rounded-full shadow-sm animate-bounce">
-                                Click Label to Expand & Download
+                                คลิกที่ป้ายเพื่อขยายและดาวน์โหลด
                             </div>
                             
                             <div className="preview-container relative w-full flex justify-center group">
@@ -581,7 +594,7 @@
                                 />
                                 <div className="overlay absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg">
                                     <div className="bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 transform scale-0 group-hover:scale-100 transition-transform duration-300">
-                                        {Icons.Maximize} Click to Expand
+                                        {Icons.Maximize} คลิกเพื่อขยาย
                                     </div>
                                 </div>
                             </div>
@@ -596,11 +609,11 @@
                                 {/* Modal Header */}
                                 <div className="p-4 border-b flex justify-between items-center bg-gray-50 z-10 relative"> 
                                     <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2 kawaii-font">
-                                        {Icons.ImageIcon} Label Preview
+                                        {Icons.ImageIcon} ตัวอย่างป้าย
                                     </h2>
                                     <div className="flex gap-2">
                                         <button onClick={handleDownloadImage} disabled={isGenerating} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm kawaii-font disabled:opacity-50">
-                                            {Icons.Download} {isGenerating ? 'Saving...' : 'Download Image'}
+                                            {Icons.Download} {isGenerating ? 'กำลังบันทึก...' : 'บันทึกรูปภาพ'}
                                         </button>
                                         <button onClick={() => setIsModalOpen(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-600 p-2 rounded-full transition">
                                             {Icons.Close}
