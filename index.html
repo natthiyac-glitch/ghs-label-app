@@ -128,16 +128,6 @@
             SaveDisk: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
             NewWindow: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         };
-        
-        const PPE_LIST = [
-            "Safety Helmet (หมวกนิรภัย)",           
-            "Safety Glasses / Goggles (แว่นตานิรภัย)",
-            "Chemical Mask (หน้ากากกันสารเคมี)",    
-            "Full Face Mask (หน้ากากเต็มหน้า)",
-            "Chemical Resistant Gloves (ถุงมือยาง)",
-            "Protective Suit (ชุดป้องกันสารเคมี)",
-            "Safety Boots (รองเท้านิรภัย)"
-        ];
 
         // --- COMPONENTS ---
         const NFPADiamond = ({ health, flammability, instability, special }) => (
@@ -184,7 +174,7 @@
                         <span className="font-black uppercase leading-none" style={{ fontSize: `${2.2 * scales.productName}rem` }}>{formData.productName || "CHEMICAL NAME"}</span>
                     </div>
                     <div className="w-[20%] flex flex-col items-center justify-center p-1 bg-gray-100">
-                        <span className="font-bold text-gray-500 text-[10px] uppercase leading-none mb-1" style={{ fontSize: `${0.7 * scales.unNumber}rem` }}>UN No.</span>
+                        <span className="font-bold text-gray-500 text-[10px] uppercase leading-none mb-1" style={{ fontSize: `${0.7 * scales.unNumber}rem` }}>UN Number / หมายเลข UN</span>
                         <span className="font-black font-mono leading-none" style={{ fontSize: `${2 * scales.unNumber}rem` }}>{formData.unNumber || "----"}</span>
                     </div>
                 </div>
@@ -193,21 +183,39 @@
                 <div className="flex flex-grow border-b-4 border-black box-border h-[62%]">
                     <div className="w-[30%] border-r-4 border-black flex flex-col">
                         
-                        {/* Upper: Pictogram */}
-                         <div className="flex-grow flex items-center justify-center p-1 overflow-hidden relative bg-white border-b-4 border-black">
-                            {formData.pictogramImage ? 
-                                <img src={formData.pictogramImage} className="max-h-full max-w-full object-contain" /> : 
-                                <div className="text-gray-300 text-[10px] text-center w-full h-full flex items-center justify-center border border-dashed border-gray-200 m-1">Pictogram</div>
-                            }
+                        {/* Upper: Pictogram & Signal Word (Merged) */}
+                         <div className="flex-grow flex flex-col items-center justify-center p-1 overflow-hidden relative bg-white border-b-4 border-black">
+                            {/* Pictogram Area */}
+                            <div className="flex-grow flex items-center justify-center w-full">
+                                {formData.pictogramImage ? 
+                                    <img src={formData.pictogramImage} className="max-h-full max-w-full object-contain" style={{ maxHeight: '100px' }} /> : 
+                                    <div className="text-gray-300 text-[10px] text-center w-full h-20 flex items-center justify-center border border-dashed border-gray-200 m-1">Pictogram</div>
+                                }
+                            </div>
+                            
+                            {/* Signal Word Area (Directly below) */}
+                            <div className="h-auto pb-2 pt-1 flex items-center justify-center relative bg-white w-full">
+                                 {formData.signalWord && (
+                                    <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `1.5rem` }}>
+                                        <span className="leading-none">{formData.signalWord}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Lower: Signal Word */}
-                         <div className="h-auto pb-2 flex items-center justify-center relative bg-white">
-                             {formData.signalWord && (
-                                <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `1.5rem` }}>
-                                    <span className="leading-none">{formData.signalWord}</span>
+                         {/* Lower: NFPA (Moved Here) */}
+                        <div className="h-[40%] flex flex-col items-center justify-center p-2 relative bg-white">
+                             {/* Wrapper to control max size and padding */}
+                            <div className="w-full h-full flex items-center justify-center p-1">
+                                <div className="aspect-square h-full max-h-[80px]">
+                                    <NFPADiamond 
+                                        health={formData.nfpaHealth} 
+                                        flammability={formData.nfpaFlammability} 
+                                        instability={formData.nfpaInstability} 
+                                        special={formData.nfpaSpecial} 
+                                    />
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                     
@@ -228,30 +236,33 @@
 
                 {/* Footer */}
                 <div className="h-[20%] flex box-border">
-                    {/* Left: NFPA */}
-                   <div className="w-[40%] border-r-4 border-black p-2 flex flex-col bg-white items-center justify-center relative">
-                        {/* Wrapper to control max size and padding */}
-                        <div className="w-full h-full flex items-center justify-center p-2">
-                            <div className="aspect-square h-full max-h-[80px]">
-                                <NFPADiamond 
-                                    health={formData.nfpaHealth} 
-                                    flammability={formData.nfpaFlammability} 
-                                    instability={formData.nfpaInstability} 
-                                    special={formData.nfpaSpecial} 
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right: PPE Specific */}
-                    <div className="w-[60%] p-3 flex flex-col bg-blue-50">
-                         <h3 className="font-bold uppercase text-blue-900 leading-none text-[10px] underline mb-1" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
-                            PPE SPECIFIC / อุปกรณ์ป้องกันพิเศษ
-                         </h3>
-                         <div className="flex-grow w-full overflow-hidden">
-                             <p className="whitespace-pre-line font-semibold text-blue-900 leading-tight" style={{ fontSize: `${0.9 * scales.ppeText}rem` }}>
-                                {formData.ppeText || "ระบุอุปกรณ์ป้องกัน..."}
-                             </p>
+                     {/* PPE Specific (Full width) */}
+                    <div className="w-full p-3 flex flex-col bg-blue-50 relative border-r-0">
+                         <div className="flex justify-between items-start mb-1">
+                             <h3 className="font-bold uppercase text-blue-900 leading-none text-[10px] underline" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
+                                PPE SPECIFIC / อุปกรณ์ป้องกันพิเศษ
+                             </h3>
+                         </div>
+                         
+                         <div className="flex flex-row h-full gap-2">
+                             {/* PPE Text */}
+                             <div className="flex-grow w-1/2 overflow-hidden pr-1">
+                                 <p className="whitespace-pre-line font-semibold text-blue-900 leading-tight" style={{ fontSize: `${0.9 * scales.ppeText}rem` }}>
+                                    {formData.ppeText || "ระบุอุปกรณ์ป้องกัน..."}
+                                 </p>
+                             </div>
+                             
+                             {/* PPE Images (3 Slots) */}
+                             <div className="w-1/2 flex items-center justify-end gap-1">
+                                 {formData.ppeImages.map((img, i) => (
+                                     <div key={i} className="h-full w-1/3 flex items-center justify-center border border-dashed border-blue-300 bg-white p-0.5">
+                                        {img ? 
+                                            <img src={img} className="max-h-full max-w-full object-contain" /> : 
+                                            <span className="text-[8px] text-blue-300 text-center">รูป {i+1}</span>
+                                        }
+                                     </div>
+                                 ))}
+                             </div>
                          </div>
                     </div>
                 </div>
@@ -269,6 +280,7 @@
                 precautionaryStatements: '', 
                 ppeText: '', 
                 pictogramImage: null,
+                ppeImages: [null, null, null], // Array for 3 PPE images
                 nfpaHealth: 0, nfpaFlammability: 0, nfpaInstability: 0, nfpaSpecial: '',
             });
 
@@ -372,6 +384,7 @@
                 };
             }, []);
 
+            // Handle Main Pictogram Upload
             const handleImageUpload = (e, field) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -381,15 +394,28 @@
                 }
             };
 
+            // Handle PPE Images Upload (Array)
+            const handlePPEImageUpload = (e, index) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const newImages = [...formData.ppeImages];
+                        newImages[index] = reader.result;
+                        setFormData(prev => ({ ...prev, ppeImages: newImages }));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             const clearImage = (field) => {
                 setFormData(prev => ({ ...prev, [field]: null }));
             };
 
-            const toggleSelection = (field, item) => {
-                setFormData(prev => {
-                    const list = prev[field];
-                    return list.includes(item) ? { ...prev, [field]: list.filter(i => i !== item) } : { ...prev, [field]: [...list, item] };
-                });
+            const clearPPEImage = (index) => {
+                const newImages = [...formData.ppeImages];
+                newImages[index] = null;
+                setFormData(prev => ({ ...prev, ppeImages: newImages }));
             };
 
             const updateScale = (key, value) => {
@@ -400,33 +426,25 @@
             const handleOpenImage = async () => {
                 setIsGenerating(true);
                 
-                // Ensure the modal is open to get the most accurate rendered element
-                const wasModalOpen = isModalOpen;
-                if (!isModalOpen) {
-                    setIsModalOpen(true);
-                }
-
-                // Wait for the modal/DOM to render completely and styles to settle
+                // Use the visible modal content
+                if (!isModalOpen) setIsModalOpen(true);
+                
+                // Force scroll to top to prevent html2canvas offset bugs
+                window.scrollTo(0,0);
+                
+                // Wait for layout stability
                 await new Promise(resolve => setTimeout(resolve, 500)); 
                 
                 try {
-                    // Try to find the modal content first
-                    let elementToCapture = document.getElementById('tank-label-modal-content');
-                    // Fallback to preview if modal content not found (should not happen if logic is correct)
-                    if (!elementToCapture) {
-                        elementToCapture = document.getElementById('tank-label-preview');
-                    }
-                    
+                    const elementToCapture = document.getElementById('tank-label-modal-content');
                     if (!elementToCapture) throw new Error("Element not found");
 
-                    // Use html2canvas with specific settings to capture exactly what is visible
-                    // scale: 2 is safer for memory, useCORS for local images, and backgroundColor to avoid transparency issues
+                    // USE dom-to-image (Better text rendering) if available, fallback to html2canvas
                     const canvas = await html2canvas(elementToCapture, { 
-                        scale: 2, 
+                        scale: 3, 
                         useCORS: true, 
                         logging: false, 
                         backgroundColor: '#ffffff',
-                        // Reset scroll to ensure the element is captured from top-left relative to itself
                         scrollX: 0,
                         scrollY: -window.scrollY
                     });
@@ -466,7 +484,7 @@
 
                 } catch (error) {
                     console.error("Error:", error);
-                    alert("เกิดข้อผิดพลาดในการสร้างภาพ: " + error.message);
+                    alert("เกิดข้อผิดพลาดในการสร้างภาพ");
                 } finally {
                     setIsGenerating(false);
                 }
@@ -565,6 +583,37 @@
                                 <div className="bg-orange-50 p-4 rounded-2xl">
                                     <label className="text-xs font-bold text-orange-400 mb-2 block">PPE Specific / อุปกรณ์ป้องกันเฉพาะเจาะจง</label>
                                     <textarea className="w-full p-3 rounded-xl bg-orange-50 text-sm border-2 border-orange-200" rows="3" value={formData.ppeText} onChange={e => setFormData({...formData, ppeText: e.target.value})} placeholder="ระบุอุปกรณ์ PPE ที่ต้องใช้..."></textarea>
+                                </div>
+
+                                {/* PPE Images Upload (3 Slots) */}
+                                <div className="bg-orange-50 p-4 rounded-2xl">
+                                    <label className="text-xs font-bold text-orange-400 mb-1 block">รูป PPE (สูงสุด 3 รูป)</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[0, 1, 2].map(index => (
+                                            <div key={index} className="relative">
+                                                <label className="flex flex-col items-center justify-center p-2 border-2 border-dashed border-orange-200 bg-white rounded-xl cursor-pointer hover:bg-orange-100 transition-colors h-24">
+                                                    {formData.ppeImages[index] ? (
+                                                        <img src={formData.ppeImages[index]} className="max-h-full max-w-full object-contain" />
+                                                    ) : (
+                                                        <>
+                                                            <div className="text-orange-300 mb-1">{Icons.Upload}</div>
+                                                            <span className="text-[10px] font-bold text-orange-400 text-center">รูป {index + 1}</span>
+                                                        </>
+                                                    )}
+                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePPEImageUpload(e, index)} />
+                                                </label>
+                                                {formData.ppeImages[index] && (
+                                                    <button 
+                                                        onClick={() => clearPPEImage(index)} 
+                                                        className="absolute -top-2 -right-2 bg-red-100 text-red-500 rounded-full p-1 shadow-sm hover:bg-red-200"
+                                                        title="ลบรูป"
+                                                    >
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
