@@ -55,6 +55,13 @@
             @page { size: landscape; margin: 0; }
             body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
+            #tank-label-preview { 
+                position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; 
+                border: none; margin: 0; max-width: none; 
+                box-shadow: none !important;
+                transform: none !important;
+                z-index: 9999;
+            }
         }
         
         /* Custom Slider Style */
@@ -173,12 +180,17 @@
                     <div className="w-[20%] bg-yellow-300 flex items-center justify-center border-r-4 border-black p-1">
                         <span className="font-black font-mono tracking-tighter leading-none" style={{ fontSize: `${2.5 * scales.tankId}rem` }}>{formData.tankId}</span>
                     </div>
-                    <div className="w-[60%] flex items-center justify-center p-2 text-center border-r-4 border-black">
+                    {/* Adjusted layout for Product Name and CAS No. */}
+                    <div className="w-[50%] flex items-center justify-center p-2 text-center border-r-4 border-black">
                         <span className="font-black uppercase leading-none" style={{ fontSize: `${2.2 * scales.productName}rem` }}>{formData.productName || "CHEMICAL NAME"}</span>
                     </div>
-                    <div className="w-[20%] flex flex-col items-center justify-center p-1 bg-gray-100">
-                        <span className="font-bold text-gray-500 text-[10px] uppercase leading-none mb-1" style={{ fontSize: `${0.7 * scales.unNumber}rem` }}>UN Number / หมายเลข UN</span>
-                        <span className="font-black font-mono leading-none" style={{ fontSize: `${2 * scales.unNumber}rem` }}>{formData.unNumber || "----"}</span>
+                    <div className="w-[15%] flex flex-col items-center justify-center p-1 bg-white border-r-4 border-black">
+                        <span className="font-bold text-gray-500 text-[9px] uppercase leading-none mb-1">CAS No.</span>
+                        <span className="font-black font-mono leading-none" style={{ fontSize: `${2 * scales.casNumber}rem` }}>{formData.casNumber || "---"}</span>
+                    </div>
+                    <div className="w-[15%] flex flex-col items-center justify-center p-1 bg-gray-100">
+                        <span className="font-bold text-gray-500 text-[9px] uppercase leading-none mb-1" style={{ fontSize: `${0.7 * scales.unNumber}rem` }}>UN No.</span>
+                        <span className="font-black font-mono leading-none" style={{ fontSize: `${2 * scales.unNumber}rem` }}>{formData.unNumber || "---"}</span>
                     </div>
                 </div>
 
@@ -265,6 +277,7 @@
                 tankId: 'T-0101',
                 productName: '',
                 unNumber: '',
+                casNumber: '', // NEW STATE
                 signalWord: 'DANGER อันตราย',
                 hazardStatements: '',
                 precautionaryStatements: '', 
@@ -275,7 +288,7 @@
             });
 
             const [scales, setScales] = useState({
-                tankId: 1, productName: 1, unNumber: 1, hazard: 1, precaution: 1, ppe: 1, ppeHeader: 1
+                tankId: 1, productName: 1, unNumber: 1, casNumber: 1, hazard: 1, precaution: 1, ppe: 1, ppeHeader: 1
             });
             
             const [savedLabels, setSavedLabels] = useState([]);
@@ -293,6 +306,7 @@
                 if (params.has('tankId')) setFormData(prev => ({ ...prev, tankId: params.get('tankId') }));
                 if (params.has('product')) setFormData(prev => ({ ...prev, productName: params.get('product') }));
                 if (params.has('un')) setFormData(prev => ({ ...prev, unNumber: params.get('un') }));
+                if (params.has('cas')) setFormData(prev => ({ ...prev, casNumber: params.get('cas') })); // URL PARAM
                 if (params.has('signal')) setFormData(prev => ({ ...prev, signalWord: params.get('signal') }));
                 if (params.has('hzd')) setFormData(prev => ({ ...prev, hazardStatements: decodeURIComponent(params.get('hzd')) }));
                 if (params.has('prec')) setFormData(prev => ({ ...prev, precautionaryStatements: decodeURIComponent(params.get('prec')) }));
@@ -411,60 +425,27 @@
                 await new Promise(resolve => setTimeout(resolve, 500)); 
                 
                 try {
-                    // TARGET THE MODAL CONTENT - IT IS VISIBLE AND RENDERED
                     const elementToCapture = document.getElementById('tank-label-modal-content');
                     if (!elementToCapture) throw new Error("Element not found");
-                    
-                    // Create a clone to strip transformations that might be on the modal or preview container
-                    // But here we capture the 'content' div which has no transforms itself, just dimensions.
-                    // We CLONE it to a fixed container at 0,0 to guarantee no scroll offsets.
-                    const clone = elementToCapture.cloneNode(true);
-                    
-                    // Clean up the clone's styles to ensure it's flat and static
-                    clone.style.transform = 'none';
-                    clone.style.margin = '0';
-                    clone.style.boxShadow = 'none';
-                    clone.style.border = '4px solid black'; // Ensure border
-                    
-                    // Force dimensions to match standard
-                    const width = 1200;
-                    const height = 800;
-                    clone.style.width = width + 'px';
-                    clone.style.height = height + 'px';
-                    
-                    const container = document.createElement('div');
-                    container.style.position = 'fixed';
-                    container.style.top = '0';
-                    container.style.left = '0';
-                    container.style.width = width + 'px';
-                    container.style.height = height + 'px';
-                    container.style.zIndex = '999999';
-                    container.style.backgroundColor = '#ffffff'; // White background behind label
-                    container.appendChild(clone);
-                    document.body.appendChild(container);
 
-                    // Capture the clone
-                    const canvas = await html2canvas(clone, { 
-                        scale: 2, 
+                    // Explicitly define capture area to prevent whitespace
+                    const rect = elementToCapture.getBoundingClientRect();
+
+                    const canvas = await html2canvas(elementToCapture, { 
+                        scale: 3, 
                         useCORS: true, 
                         logging: false, 
                         backgroundColor: '#ffffff',
-                        width: width,
-                        height: height,
-                        windowWidth: width,
-                        windowHeight: height,
+                        width: rect.width,
+                        height: rect.height,
+                        x: rect.x + window.scrollX,
+                        y: rect.y + window.scrollY,
                         scrollX: 0,
                         scrollY: 0,
-                        x: 0,
-                        y: 0
                     });
-                    
-                    // Cleanup
-                    document.body.removeChild(container);
 
                     const imgData = canvas.toDataURL('image/png');
 
-                    // Open New Window
                     const newWindow = window.open('', '_blank');
                     if (newWindow) {
                         newWindow.document.write(`
@@ -537,6 +518,7 @@
                                             <FontSlider label="รหัสถัง (Tank ID)" value={scales.tankId} onChange={v => updateScale('tankId', v)} />
                                             <FontSlider label="ชื่อสารเคมี" value={scales.productName} onChange={v => updateScale('productName', v)} />
                                             <FontSlider label="หมายเลข UN" value={scales.unNumber} onChange={v => updateScale('unNumber', v)} />
+                                            <FontSlider label="หมายเลข CAS" value={scales.casNumber} onChange={v => updateScale('casNumber', v)} />
                                             <FontSlider label="ข้อความอันตราย" value={scales.hazard} onChange={v => updateScale('hazard', v)} />
                                             <FontSlider label="ข้อควรระวัง" value={scales.precaution} onChange={v => updateScale('precaution', v)} />
                                             <FontSlider label="หัวข้อ PPE" value={scales.ppeHeader} onChange={v => updateScale('ppeHeader', v)} />
@@ -556,8 +538,9 @@
                                 <h3 className="font-bold text-orange-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-orange-100 pb-2"><span className="bg-orange-100 text-orange-600 rounded-lg p-1 text-sm">01</span> ข้อมูลทั่วไป</h3>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div><label className="text-xs font-bold text-gray-400 ml-1">รหัสถัง</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.tankId} onChange={e => setFormData({...formData, tankId: e.target.value})} placeholder="T-0101" /></div>
-                                    <div><label className="text-xs font-bold text-gray-400 ml-1">หมายเลข UN</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.unNumber} onChange={e => setFormData({...formData, unNumber: e.target.value})} placeholder="1830" /></div>
                                     <div className="col-span-2"><label className="text-xs font-bold text-gray-400 ml-1">ชื่อสารเคมี</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50 font-bold text-gray-700" value={formData.productName} onChange={e => setFormData({...formData, productName: e.target.value})} placeholder="SULFURIC ACID" /></div>
+                                    <div><label className="text-xs font-bold text-gray-400 ml-1">หมายเลข UN</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.unNumber} onChange={e => setFormData({...formData, unNumber: e.target.value})} placeholder="1830" /></div>
+                                    <div><label className="text-xs font-bold text-gray-400 ml-1">หมายเลข CAS</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.casNumber} onChange={e => setFormData({...formData, casNumber: e.target.value})} placeholder="7664-93-9" /></div>
                                 </div>
                             </div>
 
