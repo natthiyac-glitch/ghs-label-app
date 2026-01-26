@@ -128,6 +128,16 @@
             SaveDisk: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
             NewWindow: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         };
+        
+        const PPE_LIST = [
+            "Safety Helmet (หมวกนิรภัย)",           
+            "Safety Glasses / Goggles (แว่นตานิรภัย)",
+            "Chemical Mask (หน้ากากกันสารเคมี)",    
+            "Full Face Mask (หน้ากากเต็มหน้า)",
+            "Chemical Resistant Gloves (ถุงมือยาง)",
+            "Protective Suit (ชุดป้องกันสารเคมี)",
+            "Safety Boots (รองเท้านิรภัย)"
+        ];
 
         // --- COMPONENTS ---
         const NFPADiamond = ({ health, flammability, instability, special }) => (
@@ -183,7 +193,7 @@
                 <div className="flex flex-grow border-b-4 border-black box-border h-[62%]">
                     <div className="w-[30%] border-r-4 border-black flex flex-col">
                         
-                        {/* Upper: Pictogram (Moved Here) */}
+                        {/* Upper: Pictogram */}
                          <div className="flex-grow flex items-center justify-center p-1 overflow-hidden relative bg-white border-b-4 border-black">
                             {formData.pictogramImage ? 
                                 <img src={formData.pictogramImage} className="max-h-full max-w-full object-contain" /> : 
@@ -191,7 +201,7 @@
                             }
                         </div>
 
-                        {/* Lower: Signal Word (Moved Here) */}
+                        {/* Lower: Signal Word */}
                          <div className="h-auto pb-2 flex items-center justify-center relative bg-white">
                              {formData.signalWord && (
                                 <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `1.5rem` }}>
@@ -218,7 +228,7 @@
 
                 {/* Footer */}
                 <div className="h-[20%] flex box-border">
-                    {/* Left: NFPA (Moved Here, Scaled Down, Padded) */}
+                    {/* Left: NFPA */}
                    <div className="w-[40%] border-r-4 border-black p-2 flex flex-col bg-white items-center justify-center relative">
                         {/* Wrapper to control max size and padding */}
                         <div className="w-full h-full flex items-center justify-center p-2">
@@ -375,6 +385,13 @@
                 setFormData(prev => ({ ...prev, [field]: null }));
             };
 
+            const toggleSelection = (field, item) => {
+                setFormData(prev => {
+                    const list = prev[field];
+                    return list.includes(item) ? { ...prev, [field]: list.filter(i => i !== item) } : { ...prev, [field]: [...list, item] };
+                });
+            };
+
             const updateScale = (key, value) => {
                 setScales(prev => ({ ...prev, [key]: value }));
             };
@@ -383,25 +400,33 @@
             const handleOpenImage = async () => {
                 setIsGenerating(true);
                 
-                // Use the visible modal content
-                if (!isModalOpen) setIsModalOpen(true);
-                
-                // Force scroll to top to prevent html2canvas offset bugs
-                window.scrollTo(0,0);
-                
-                // Wait for layout stability
+                // Ensure the modal is open to get the most accurate rendered element
+                const wasModalOpen = isModalOpen;
+                if (!isModalOpen) {
+                    setIsModalOpen(true);
+                }
+
+                // Wait for the modal/DOM to render completely and styles to settle
                 await new Promise(resolve => setTimeout(resolve, 500)); 
                 
                 try {
-                    const elementToCapture = document.getElementById('tank-label-modal-content');
+                    // Try to find the modal content first
+                    let elementToCapture = document.getElementById('tank-label-modal-content');
+                    // Fallback to preview if modal content not found (should not happen if logic is correct)
+                    if (!elementToCapture) {
+                        elementToCapture = document.getElementById('tank-label-preview');
+                    }
+                    
                     if (!elementToCapture) throw new Error("Element not found");
 
-                    // USE dom-to-image (Better text rendering) if available, fallback to html2canvas
+                    // Use html2canvas with specific settings to capture exactly what is visible
+                    // scale: 2 is safer for memory, useCORS for local images, and backgroundColor to avoid transparency issues
                     const canvas = await html2canvas(elementToCapture, { 
-                        scale: 3, 
+                        scale: 2, 
                         useCORS: true, 
                         logging: false, 
                         backgroundColor: '#ffffff',
+                        // Reset scroll to ensure the element is captured from top-left relative to itself
                         scrollX: 0,
                         scrollY: -window.scrollY
                     });
@@ -441,7 +466,7 @@
 
                 } catch (error) {
                     console.error("Error:", error);
-                    alert("เกิดข้อผิดพลาดในการสร้างภาพ");
+                    alert("เกิดข้อผิดพลาดในการสร้างภาพ: " + error.message);
                 } finally {
                     setIsGenerating(false);
                 }
