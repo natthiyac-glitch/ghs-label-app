@@ -103,6 +103,51 @@
             justify-content: center;
             height: 100%;
         }
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 12px;
+        }
+        .gallery-item {
+            cursor: pointer;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 8px;
+            transition: all 0.2s;
+            position: relative;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1/1;
+        }
+        .gallery-item:hover {
+            border-color: #38bdf8;
+            background-color: #f0f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .gallery-delete {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .gallery-item:hover .gallery-delete {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="text-gray-700">
@@ -126,7 +171,9 @@
             Move: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>,
             Folder: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>,
             SaveDisk: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
-            NewWindow: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            NewWindow: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>,
+            Grid: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
+            Plus: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         };
 
         // --- COMPONENTS ---
@@ -145,7 +192,7 @@
             </div>
         );
 
-        const FontSlider = ({ label, value, onChange }) => (
+        const FontSlider = ({ label, value, onChange, min = 0.5, max = 2.0, step = 0.05 }) => (
             <div className="flex flex-col mb-2 p-2 bg-white rounded-lg border border-orange-100 shadow-sm">
                 <div className="flex justify-between items-center mb-1">
                     <label className="text-xs font-bold text-orange-500 kawaii-font tracking-wide">{label}</label>
@@ -153,9 +200,9 @@
                 </div>
                 <input 
                     type="range" 
-                    min="0.5" 
-                    max="2.0" 
-                    step="0.05" 
+                    min={min} 
+                    max={max} 
+                    step={step} 
                     value={value} 
                     onChange={(e) => onChange(parseFloat(e.target.value))} 
                 />
@@ -183,40 +230,43 @@
                 <div className="flex flex-grow border-b-4 border-black box-border h-[62%]">
                     <div className="w-[30%] border-r-4 border-black flex flex-col">
                         
-                        {/* Upper: Pictogram & Signal Word (Merged) */}
-                         <div className="flex-grow flex flex-col items-center justify-center p-1 overflow-hidden relative bg-white border-b-4 border-black">
-                            {/* Pictogram Area */}
-                            <div className="flex-grow flex items-center justify-center w-full">
-                                {formData.pictogramImage ? 
-                                    <img src={formData.pictogramImage} className="max-h-full max-w-full object-contain" style={{ maxHeight: '100px' }} /> : 
-                                    <div className="text-gray-300 text-[10px] text-center w-full h-20 flex items-center justify-center border border-dashed border-gray-200 m-1">Pictogram</div>
-                                }
-                            </div>
-                            
-                            {/* Signal Word Area (Directly below) */}
-                            <div className="h-auto pb-2 pt-1 flex items-center justify-center relative bg-white w-full">
-                                 {formData.signalWord && (
-                                    <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `1.5rem` }}>
-                                        <span className="leading-none">{formData.signalWord}</span>
-                                    </div>
+                        {/* Upper: Signal Word (Moved to Top) */}
+                        <div className="h-[20%] flex items-center justify-center p-1 relative bg-white border-b-0">
+                             {formData.signalWord && (
+                                <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `${1.5 * scales.signal}rem` }}>
+                                    <span className="leading-none">{formData.signalWord}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Lower: Pictogram (Moved Below Signal Word) */}
+                         <div className="h-[80%] flex items-center justify-center p-1 overflow-hidden relative bg-white border-b-4 border-black">
+                            {/* Pictogram Area - Multi Images */}
+                            <div className="flex-grow flex flex-wrap items-center justify-center w-full gap-1 p-1 content-center" style={{ transform: `translate(${scales.picX || 0}px, ${scales.picY || 0}px) scale(${scales.picScale || 1})` }}>
+                                {formData.pictograms.length > 0 ? (
+                                    formData.pictograms.map((img, i) => {
+                                        // Smart sizing logic
+                                        const count = formData.pictograms.length;
+                                        let sizeClass = "w-[45%] h-[45%]"; // Default 2-4 images
+                                        if (count === 1) sizeClass = "w-[85%] h-[85%]";
+                                        if (count > 4) sizeClass = "w-[30%] h-[30%]";
+                                        
+                                        // If it's a data URI (SVG/PNG), render as img
+                                        if (typeof img === 'string' && img.startsWith('data:')) {
+                                            return <img key={i} src={img} className={`object-contain ${sizeClass}`} />;
+                                        } 
+                                        return (
+                                            <div key={i} className={`flex items-center justify-center ${sizeClass}`}>
+                                                <svg viewBox="0 0 100 100" className="w-full h-full">{img}</svg>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="text-gray-300 text-[10px] text-center w-full h-full flex items-center justify-center border border-dashed border-gray-200">รูปสัญลักษณ์ (สูงสุด 9 รูป)</div>
                                 )}
                             </div>
                         </div>
 
-                         {/* Lower: NFPA (Moved Here) */}
-                        <div className="h-[40%] flex flex-col items-center justify-center p-2 relative bg-white">
-                             {/* Wrapper to control max size and padding */}
-                            <div className="w-full h-full flex items-center justify-center p-1">
-                                <div className="aspect-square h-full max-h-[80px]">
-                                    <NFPADiamond 
-                                        health={formData.nfpaHealth} 
-                                        flammability={formData.nfpaFlammability} 
-                                        instability={formData.nfpaInstability} 
-                                        special={formData.nfpaSpecial} 
-                                    />
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     
                     <div className="w-[70%] p-4 flex flex-col justify-start overflow-hidden relative">
@@ -236,8 +286,23 @@
 
                 {/* Footer */}
                 <div className="h-[20%] flex box-border">
-                     {/* PPE Specific (Full width) */}
-                    <div className="w-full p-3 flex flex-col bg-blue-50 relative border-r-0">
+                    {/* Left: NFPA (Moved Here) */}
+                   <div className="w-[40%] border-r-4 border-black p-2 flex flex-col bg-white items-center justify-center relative">
+                        {/* Wrapper to control max size and padding */}
+                        <div className="w-full h-full flex items-center justify-center p-2">
+                            <div className="aspect-square h-full max-h-[80px]" style={{ transform: `scale(${scales.nfpa})` }}>
+                                <NFPADiamond 
+                                    health={formData.nfpaHealth} 
+                                    flammability={formData.nfpaFlammability} 
+                                    instability={formData.nfpaInstability} 
+                                    special={formData.nfpaSpecial} 
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: PPE Specific */}
+                    <div className="w-[60%] p-3 flex flex-col bg-blue-50 relative border-r-0">
                          <div className="flex justify-between items-start mb-1">
                              <h3 className="font-bold uppercase text-blue-900 leading-none text-[10px] underline" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
                                 PPE SPECIFIC / อุปกรณ์ป้องกันพิเศษ
@@ -252,7 +317,7 @@
                                  </p>
                              </div>
                              
-                             {/* PPE Images (3 Slots) - Adjusted: Lifted up slightly (pb-2), Removed placeholders */}
+                             {/* PPE Images (3 Slots) */}
                              <div className="w-1/2 flex items-center justify-end gap-1 pb-2">
                                  {formData.ppeImages.map((img, i) => (
                                      <div key={i} className={`h-full w-1/3 flex items-center justify-center p-0.5 ${img ? 'border border-dashed border-blue-300 bg-white' : ''}`}>
@@ -276,24 +341,30 @@
                 hazardStatements: '',
                 precautionaryStatements: '', 
                 ppeText: '', 
-                pictogramImage: null,
-                ppeImages: [null, null, null], // Array for 3 PPE images
+                pictograms: [], 
+                ppeImages: [null, null, null],
                 nfpaHealth: 0, nfpaFlammability: 0, nfpaInstability: 0, nfpaSpecial: '',
             });
 
             const [scales, setScales] = useState({
-                tankId: 1, productName: 1, unNumber: 1, hazard: 1, precaution: 1, ppeText: 1, ppeHeader: 1
+                tankId: 1, productName: 1, unNumber: 1, hazard: 1, precaution: 1, ppeText: 1, ppeHeader: 1, 
+                signal: 1, pictogram: 1, nfpa: 1,
+                picX: 0, picY: 0, picScale: 1
             });
             
             const [savedLabels, setSavedLabels] = useState([]);
             const [showFontPanel, setShowFontPanel] = useState(false);
             const [showLibrary, setShowLibrary] = useState(false);
+            const [showGallery, setShowGallery] = useState(false); 
             const [panelPosition, setPanelPosition] = useState({ x: 20, y: 100 }); 
             const isDragging = useRef(false);
             const dragOffset = useRef({ x: 0, y: 0 });
 
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isGenerating, setIsGenerating] = useState(false);
+            
+            // New state for personal library
+            const [libraryImages, setLibraryImages] = useState([]);
 
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
@@ -305,18 +376,46 @@
                 if (params.has('prec')) setFormData(prev => ({ ...prev, precautionaryStatements: decodeURIComponent(params.get('prec')) }));
                 if (params.has('ppe')) setFormData(prev => ({ ...prev, ppeText: decodeURIComponent(params.get('ppe')) }));
 
-                // Load saved templates
                 const saved = localStorage.getItem('ghs_templates');
                 if (saved) {
-                    try {
-                        setSavedLabels(JSON.parse(saved));
-                    } catch (e) {
-                        console.error("Failed to load templates", e);
-                    }
+                    try { setSavedLabels(JSON.parse(saved)); } catch (e) {}
+                }
+                
+                const lib = localStorage.getItem('ghs_my_pictograms');
+                if (lib) {
+                     try { setLibraryImages(JSON.parse(lib)); } catch (e) {}
                 }
             }, []);
 
-            // Save Template
+            const addToLibrary = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const newImg = reader.result;
+                        const newLib = [...libraryImages, newImg];
+                        setLibraryImages(newLib);
+                        localStorage.setItem('ghs_my_pictograms', JSON.stringify(newLib));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            const deleteFromLibrary = (index, e) => {
+                e.stopPropagation();
+                const newLib = libraryImages.filter((_, i) => i !== index);
+                setLibraryImages(newLib);
+                localStorage.setItem('ghs_my_pictograms', JSON.stringify(newLib));
+            };
+            
+            const selectFromLibrary = (imgSrc) => {
+                setFormData(prev => ({ 
+                    ...prev, 
+                    pictograms: [...prev.pictograms, imgSrc].slice(0, 9) 
+                }));
+                setShowGallery(false);
+            };
+
             const handleSaveTemplate = () => {
                 if (!formData.productName) {
                     alert("กรุณากรอกชื่อสารเคมีก่อนบันทึก");
@@ -332,7 +431,6 @@
                 }
             };
             
-            // Load Template
             const handleLoadTemplate = (template) => {
                 if(confirm(`ต้องการโหลดข้อมูล "${template.name}" หรือไม่?`)) {
                     setFormData(template.data);
@@ -341,7 +439,6 @@
                 }
             };
             
-            // Delete Template
             const handleDeleteTemplate = (id) => {
                 if(confirm("ต้องการลบแม่แบบนี้หรือไม่?")) {
                     const updated = savedLabels.filter(l => l.id !== id);
@@ -350,7 +447,6 @@
                 }
             };
 
-            // Drag Handlers
             const handleDragStart = (e) => {
                 isDragging.current = true;
                 const rect = e.currentTarget.parentElement.getBoundingClientRect();
@@ -381,17 +477,27 @@
                 };
             }, []);
 
-            // Handle Main Pictogram Upload
-            const handleImageUpload = (e, field) => {
-                const file = e.target.files[0];
-                if (file) {
+            const handlePictogramUpload = (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
                     const reader = new FileReader();
-                    reader.onloadend = () => setFormData(prev => ({ ...prev, [field]: reader.result }));
+                    reader.onloadend = () => {
+                        setFormData(prev => ({ 
+                            ...prev, 
+                            pictograms: [...prev.pictograms, reader.result].slice(0, 9)
+                        }));
+                    };
                     reader.readAsDataURL(file);
-                }
+                });
             };
 
-            // Handle PPE Images Upload (Array)
+            const removePictogram = (index) => {
+                setFormData(prev => ({
+                    ...prev,
+                    pictograms: prev.pictograms.filter((_, i) => i !== index)
+                }));
+            };
+
             const handlePPEImageUpload = (e, index) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -405,10 +511,6 @@
                 }
             };
 
-            const clearImage = (field) => {
-                setFormData(prev => ({ ...prev, [field]: null }));
-            };
-
             const clearPPEImage = (index) => {
                 const newImages = [...formData.ppeImages];
                 newImages[index] = null;
@@ -419,27 +521,20 @@
                 setScales(prev => ({ ...prev, [key]: value }));
             };
 
-            // --- OPEN IN NEW WINDOW (Robust Capture) ---
             const handleOpenImage = async () => {
                 setIsGenerating(true);
                 
-                // Track initial state
                 const wasModalOpen = isModalOpen;
-
-                // Use the visible modal content
                 if (!isModalOpen) setIsModalOpen(true);
                 
-                // Force scroll to top to prevent html2canvas offset bugs
                 window.scrollTo(0,0);
                 
-                // Wait for layout stability
                 await new Promise(resolve => setTimeout(resolve, 500)); 
                 
                 try {
                     const elementToCapture = document.getElementById('tank-label-modal-content');
                     if (!elementToCapture) throw new Error("Element not found");
 
-                    // USE dom-to-image (Better text rendering) if available, fallback to html2canvas
                     const canvas = await html2canvas(elementToCapture, { 
                         scale: 3, 
                         useCORS: true, 
@@ -451,7 +546,6 @@
 
                     const imgData = canvas.toDataURL('image/png');
 
-                    // Open New Window with Instructions
                     const newWindow = window.open('', '_blank');
                     if (newWindow) {
                         newWindow.document.write(`
@@ -477,7 +571,6 @@
                         alert('หน้าต่างใหม่ถูกบล็อก! โปรดอนุญาต Pop-up สำหรับเว็บไซต์นี้');
                     }
                     
-                    // Restore state: If modal wasn't open originally, close it.
                     if (!wasModalOpen) {
                         setIsModalOpen(false);
                     }
@@ -529,6 +622,10 @@
                                             <FontSlider label="ข้อควรระวัง" value={scales.precaution} onChange={v => updateScale('precaution', v)} />
                                             <FontSlider label="หัวข้อ PPE" value={scales.ppeHeader} onChange={v => updateScale('ppeHeader', v)} />
                                             <FontSlider label="รายการ PPE" value={scales.ppeText} onChange={v => updateScale('ppeText', v)} />
+                                            <FontSlider label="ขนาดรูป (Scale)" value={scales.picScale} onChange={v => updateScale('picScale', v)} />
+                                            <FontSlider label="ตำแหน่งรูป X (ซ้าย-ขวา)" value={scales.picX} min={-100} max={100} step={5} onChange={v => updateScale('picX', v)} />
+                                            <FontSlider label="ตำแหน่งรูป Y (ขึ้น-ลง)" value={scales.picY} min={-100} max={100} step={5} onChange={v => updateScale('picY', v)} />
+                                            <FontSlider label="ขนาด NFPA" value={scales.nfpa} onChange={v => updateScale('nfpa', v)} />
                                         </div>
                                     </div>
                                 )}
@@ -551,17 +648,37 @@
 
                             <div className="space-y-4">
                                 <h3 className="font-bold text-sky-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-sky-100 pb-2"><span className="bg-sky-100 text-sky-600 rounded-lg p-1 text-sm">02</span> ข้อมูลอันตราย</h3>
+                                
+                                {/* Updated Pictogram with Custom Gallery */}
                                 <div>
-                                    <label className="text-xs font-bold text-gray-400 ml-1 mb-1 block">รูปสัญลักษณ์ (Pictogram)</label>
-                                    <div className="flex gap-2">
-                                        <label className="flex-grow flex flex-col items-center justify-center p-4 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer hover:bg-sky-50 transition-colors group">
+                                    <label className="text-xs font-bold text-gray-400 ml-1 mb-1 flex justify-between">
+                                        <span>รูปสัญลักษณ์ (สูงสุด 9 รูป)</span>
+                                        <button onClick={() => setShowGallery(true)} className="text-sky-500 hover:underline cursor-pointer flex items-center gap-1 bg-sky-50 px-2 py-0.5 rounded-full text-[10px]">
+                                            {Icons.Grid} คลังรูปส่วนตัว
+                                        </button>
+                                    </label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        <label className="flex-grow flex flex-col items-center justify-center p-3 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer hover:bg-sky-50 transition-colors group min-h-[60px]">
                                             <div className="text-sky-300 group-hover:text-sky-500 transition-colors transform group-hover:scale-110 duration-300">{Icons.Upload}</div>
-                                            <span className="mt-1 text-xs font-bold text-sky-400">{formData.pictogramImage ? "เปลี่ยนรูป" : "อัปโหลดรูป"}</span>
-                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'pictogramImage')} />
+                                            <span className="mt-1 text-xs font-bold text-sky-400">อัปโหลดเอง</span>
+                                            <input type="file" accept="image/*" multiple className="hidden" onChange={handlePictogramUpload} />
                                         </label>
-                                        {formData.pictogramImage && <button onClick={() => clearImage('pictogramImage')} className="flex items-center justify-center w-12 bg-red-50 border-2 border-red-100 rounded-2xl hover:bg-red-100 text-red-400 transition-colors">{Icons.Trash}</button>}
+                                        {formData.pictograms.map((img, i) => (
+                                            <div key={i} className="relative w-16 h-16 border rounded-lg bg-gray-50 flex items-center justify-center">
+                                                {/* Check if img is a string (URL/Base64) or a React Element (SVG) */}
+                                                {typeof img === 'string' ? (
+                                                    <img src={img} className="max-w-full max-h-full p-1 object-contain" />
+                                                ) : (
+                                                    <div className="w-full h-full p-1">{img}</div>
+                                                )}
+                                                <button onClick={() => removePictogram(i)} className="absolute -top-2 -right-2 bg-red-100 text-red-500 rounded-full p-0.5 shadow-sm hover:bg-red-200">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
+                                
                                 <div className="bg-sky-50 p-3 rounded-xl">
                                     <label className="text-xs font-bold text-gray-400 mb-2 block text-center">รหัส NFPA</label>
                                     <div className="grid grid-cols-4 gap-2">
@@ -627,6 +744,46 @@
                             </div>
                         </div>
                     </div>
+
+                    {/* MODAL: MY GALLERY */}
+                    {showGallery && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden relative">
+                                <div className="p-4 border-b bg-sky-50 flex justify-between items-center"><h3 className="font-bold text-sky-700 text-lg kawaii-font">คลังรูป GHS ส่วนตัว</h3><button onClick={() => setShowGallery(false)} className="text-gray-400 hover:text-red-500">{Icons.Close}</button></div>
+                                
+                                {/* Upload New Button Area */}
+                                <div className="p-4 bg-sky-50 border-b border-sky-100 flex justify-center">
+                                    <label className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-full cursor-pointer flex items-center gap-2 transition shadow-md">
+                                        {Icons.Upload}
+                                        <span>อัปโหลดรูปลงคลัง</span>
+                                        <input type="file" accept="image/*" className="hidden" onChange={addToLibrary} />
+                                    </label>
+                                </div>
+
+                                <div className="p-4 overflow-y-auto flex-grow bg-white">
+                                    {libraryImages.length === 0 ? (
+                                        <div className="text-center text-gray-400 py-10 flex flex-col items-center">
+                                            <div className="opacity-50 mb-2">{Icons.ImageIcon}</div>
+                                            ยังไม่มีรูปในคลัง<br/>กดปุ่มด้านบนเพื่อเพิ่มรูป
+                                        </div>
+                                    ) : (
+                                        <div className="gallery-grid">
+                                            {libraryImages.map((imgSrc, i) => (
+                                                <div key={i} className="gallery-item flex flex-col items-center" onClick={() => selectFromLibrary(imgSrc)}>
+                                                    <div className="w-16 h-16 relative flex items-center justify-center">
+                                                         <img src={imgSrc} className="max-w-full max-h-full object-contain" />
+                                                    </div>
+                                                    <div className="gallery-delete" onClick={(e) => deleteFromLibrary(i, e)} title="ลบออกจากคลัง">
+                                                        {Icons.Trash}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* MODAL & LIBRARY */}
                     {showLibrary && (
