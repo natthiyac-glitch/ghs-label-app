@@ -18,6 +18,7 @@
     
     <!-- Libraries for Image Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <!-- Google Fonts: Fredoka (Rounded) & Sarabun (Thai) -->
     <style>
@@ -156,6 +157,7 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+        const { jsPDF } = window.jspdf;
 
         // --- ICONS ---
         const Icons = {
@@ -173,7 +175,8 @@
             SaveDisk: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
             NewWindow: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>,
             Grid: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
-            Plus: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Plus: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+            Pdf: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         };
 
         // --- COMPONENTS ---
@@ -226,21 +229,14 @@
                     </div>
                 </div>
 
-                {/* Body */}
-                <div className="flex flex-grow border-b-4 border-black box-border h-[62%]">
-                    <div className="w-[30%] border-r-4 border-black flex flex-col">
+                {/* Body - Main Content Area */}
+                <div className="flex flex-grow h-[82%]">
+                    
+                    {/* LEFT COLUMN (30%) */}
+                    <div className="w-[30%] border-r-4 border-black flex flex-col border-b-4 border-black box-border">
                         
-                        {/* Upper: Signal Word (Moved to Top) */}
-                        <div className="h-[20%] flex items-center justify-center p-1 relative bg-white border-b-0">
-                             {formData.signalWord && (
-                                <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `${1.5 * scales.signal}rem` }}>
-                                    <span className="leading-none">{formData.signalWord}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Lower: Pictogram (Moved Below Signal Word) */}
-                         <div className="h-[80%] flex items-center justify-center p-1 overflow-hidden relative bg-white border-b-4 border-black">
+                        {/* Upper: Pictogram (Merged Pictogram+Signal Word) */}
+                         <div className="flex-grow flex flex-col items-center justify-center p-1 overflow-hidden relative bg-white">
                             {/* Pictogram Area - Multi Images */}
                             <div className="flex-grow flex flex-wrap items-center justify-center w-full gap-1 p-1 content-center" style={{ transform: `translate(${scales.picX || 0}px, ${scales.picY || 0}px) scale(${scales.picScale || 1})` }}>
                                 {formData.pictograms.length > 0 ? (
@@ -265,21 +261,35 @@
                                     <div className="text-gray-300 text-[10px] text-center w-full h-full flex items-center justify-center border border-dashed border-gray-200">รูปสัญลักษณ์ (สูงสุด 9 รูป)</div>
                                 )}
                             </div>
+                            
+                            {/* Signal Word Area (Directly below) */}
+                            <div className="h-auto pb-2 pt-1 flex items-center justify-center relative bg-white w-full">
+                                 {formData.signalWord && (
+                                    <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `${1.5 * scales.signal}rem` }}>
+                                        <span className="leading-none">{formData.signalWord}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                     </div>
                     
-                    <div className="w-[70%] p-4 flex flex-col justify-start overflow-hidden relative">
-                        {/* Hazard Statements */}
-                        <div className="mb-4">
-                            <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.hazard}rem` }}>HAZARD STATEMENTS (เฉพาะ H phase):</h3>
-                            <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.hazard}rem` }}>{formData.hazardStatements || "..."}</p>
-                        </div>
+                    {/* RIGHT COLUMN (70%) */}
+                    <div className="w-[70%] flex flex-col border-b-4 border-black box-border">
+                        
+                        {/* Top: Hazard & Precautionary Statements */}
+                        <div className="flex-grow p-4 flex flex-col justify-start overflow-hidden relative">
+                            {/* Hazard Statements */}
+                            <div className="mb-4">
+                                <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.hazard}rem` }}>HAZARD STATEMENTS (ข้อความระบุอันตราย):</h3>
+                                <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.hazard}rem` }}>{formData.hazardStatements || "..."}</p>
+                            </div>
 
-                        {/* Precautionary Statements */}
-                        <div>
-                            <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.precaution}rem` }}>PRECAUTIONARY STATEMENTS (ข้อควรระวัง):</h3>
-                            <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.precaution}rem` }}>{formData.precautionaryStatements || "..."}</p>
+                            {/* Precautionary Statements */}
+                            <div>
+                                <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.precaution}rem` }}>PRECAUTIONARY STATEMENTS (ข้อควรระวัง):</h3>
+                                <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.precaution}rem` }}>{formData.precautionaryStatements || "..."}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -287,10 +297,10 @@
                 {/* Footer */}
                 <div className="h-[20%] flex box-border">
                     {/* Left: NFPA (Moved Here) */}
-                   <div className="w-[40%] border-r-4 border-black p-2 flex flex-col bg-white items-center justify-center relative">
+                   <div className="w-[30%] border-r-4 border-black p-2 flex flex-col bg-white items-center justify-center relative">
                         {/* Wrapper to control max size and padding */}
                         <div className="w-full h-full flex items-center justify-center p-2">
-                            <div className="aspect-square h-full max-h-[80px]" style={{ transform: `scale(${scales.nfpa})` }}>
+                            <div className="aspect-square h-full max-h-[100px]" style={{ transform: `scale(${scales.nfpa})` }}>
                                 <NFPADiamond 
                                     health={formData.nfpaHealth} 
                                     flammability={formData.nfpaFlammability} 
@@ -301,24 +311,24 @@
                         </div>
                     </div>
 
-                    {/* Right: PPE Specific */}
-                    <div className="w-[60%] p-3 flex flex-col bg-blue-50 relative border-r-0">
+                    {/* Right: PPE Specific (Widened) */}
+                    <div className="w-[70%] p-3 flex flex-col bg-blue-50 relative border-r-0">
                          <div className="flex justify-between items-start mb-1">
                              <h3 className="font-bold uppercase text-blue-900 leading-none text-[10px] underline" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
-                                PPE SPECIFIC / อุปกรณ์ป้องกันพิเศษ
+                                PPE SPECIFIC / อุปกรณ์ป้องกันพิเศษในสภาวะปกติ
                              </h3>
                          </div>
                          
                          <div className="flex flex-row h-full gap-2">
                              {/* PPE Text */}
-                             <div className="flex-grow w-1/2 overflow-hidden pr-1">
+                             <div className="flex-grow w-[60%] overflow-hidden pr-1">
                                  <p className="whitespace-pre-line font-semibold text-blue-900 leading-tight" style={{ fontSize: `${0.9 * scales.ppeText}rem` }}>
                                     {formData.ppeText || "ระบุอุปกรณ์ป้องกัน..."}
                                  </p>
                              </div>
                              
                              {/* PPE Images (3 Slots) */}
-                             <div className="w-1/2 flex items-center justify-end gap-1 pb-2">
+                             <div className="w-[40%] flex items-center justify-end gap-1 pb-2">
                                  {formData.ppeImages.map((img, i) => (
                                      <div key={i} className={`h-full w-1/3 flex items-center justify-center p-0.5 ${img ? 'border border-dashed border-blue-300 bg-white' : ''}`}>
                                         {img && <img src={img} className="max-h-full max-w-full object-contain" />}
@@ -341,8 +351,8 @@
                 hazardStatements: '',
                 precautionaryStatements: '', 
                 ppeText: '', 
-                pictograms: [], 
-                ppeImages: [null, null, null],
+                pictograms: [], // Array for multiple pictograms (max 9)
+                ppeImages: [null, null, null], // Array for 3 PPE images
                 nfpaHealth: 0, nfpaFlammability: 0, nfpaInstability: 0, nfpaSpecial: '',
             });
 
@@ -352,19 +362,24 @@
                 picX: 0, picY: 0, picScale: 1
             });
             
+            // New: Personal Library State
+            const [libraryImages, setLibraryImages] = useState([]);
+            
+            // New: Personal PPE Library State
+            const [ppeLibraryImages, setPpeLibraryImages] = useState([]);
+            const [activePPESlot, setActivePPESlot] = useState(null); // Track which PPE slot (0,1,2) is being filled
+            
             const [savedLabels, setSavedLabels] = useState([]);
             const [showFontPanel, setShowFontPanel] = useState(false);
             const [showLibrary, setShowLibrary] = useState(false);
-            const [showGallery, setShowGallery] = useState(false); 
+            const [showGallery, setShowGallery] = useState(false); // Used for My Pictogram Library
+            const [showPPEGallery, setShowPPEGallery] = useState(false); // Used for My PPE Library
             const [panelPosition, setPanelPosition] = useState({ x: 20, y: 100 }); 
             const isDragging = useRef(false);
             const dragOffset = useRef({ x: 0, y: 0 });
 
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isGenerating, setIsGenerating] = useState(false);
-            
-            // New state for personal library
-            const [libraryImages, setLibraryImages] = useState([]);
 
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
@@ -376,17 +391,26 @@
                 if (params.has('prec')) setFormData(prev => ({ ...prev, precautionaryStatements: decodeURIComponent(params.get('prec')) }));
                 if (params.has('ppe')) setFormData(prev => ({ ...prev, ppeText: decodeURIComponent(params.get('ppe')) }));
 
+                // Load saved templates
                 const saved = localStorage.getItem('ghs_templates');
                 if (saved) {
                     try { setSavedLabels(JSON.parse(saved)); } catch (e) {}
                 }
                 
+                // Load My Pictogram Library
                 const lib = localStorage.getItem('ghs_my_pictograms');
                 if (lib) {
                      try { setLibraryImages(JSON.parse(lib)); } catch (e) {}
                 }
+                
+                // Load My PPE Library
+                const ppeLib = localStorage.getItem('ghs_my_ppe_library');
+                if (ppeLib) {
+                     try { setPpeLibraryImages(JSON.parse(ppeLib)); } catch (e) {}
+                }
             }, []);
 
+            // --- LIBRARY FUNCTIONS (Pictogram) ---
             const addToLibrary = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -402,7 +426,7 @@
             };
             
             const deleteFromLibrary = (index, e) => {
-                e.stopPropagation();
+                e.stopPropagation(); 
                 const newLib = libraryImages.filter((_, i) => i !== index);
                 setLibraryImages(newLib);
                 localStorage.setItem('ghs_my_pictograms', JSON.stringify(newLib));
@@ -413,9 +437,60 @@
                     ...prev, 
                     pictograms: [...prev.pictograms, imgSrc].slice(0, 9) 
                 }));
-                setShowGallery(false);
+                // setShowGallery(false);
             };
 
+            // --- LIBRARY FUNCTIONS (PPE) ---
+            const addToPPELibrary = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const newImg = reader.result;
+                        const newLib = [...ppeLibraryImages, newImg];
+                        setPpeLibraryImages(newLib);
+                        localStorage.setItem('ghs_my_ppe_library', JSON.stringify(newLib));
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const deleteFromPPELibrary = (index, e) => {
+                e.stopPropagation();
+                const newLib = ppeLibraryImages.filter((_, i) => i !== index);
+                setPpeLibraryImages(newLib);
+                localStorage.setItem('ghs_my_ppe_library', JSON.stringify(newLib));
+            };
+            
+            // Function to open PPE gallery for a specific slot
+            const openPPEGalleryForSlot = (index) => {
+                setActivePPESlot(index);
+                setShowPPEGallery(true);
+            };
+
+            const selectFromPPELibrary = (imgSrc) => {
+                if (activePPESlot !== null) {
+                     // If we know which slot to fill (clicked from the slot itself)
+                     const newImages = [...formData.ppeImages];
+                     newImages[activePPESlot] = imgSrc;
+                     setFormData(prev => ({ ...prev, ppeImages: newImages }));
+                     setShowPPEGallery(false);
+                     setActivePPESlot(null);
+                } else {
+                     // Fallback: fill first empty slot or alert if full (user clicked library button directly)
+                     const emptyIndex = formData.ppeImages.findIndex(img => img === null);
+                     if (emptyIndex !== -1) {
+                         const newImages = [...formData.ppeImages];
+                         newImages[emptyIndex] = imgSrc;
+                         setFormData(prev => ({ ...prev, ppeImages: newImages }));
+                         setShowPPEGallery(false);
+                     } else {
+                         alert("ช่องใส่รูปเต็มแล้ว (กรุณาลบรูปเก่าออกก่อน)");
+                     }
+                }
+            };
+
+            // Save Template
             const handleSaveTemplate = () => {
                 if (!formData.productName) {
                     alert("กรุณากรอกชื่อสารเคมีก่อนบันทึก");
@@ -431,6 +506,7 @@
                 }
             };
             
+            // Load Template
             const handleLoadTemplate = (template) => {
                 if(confirm(`ต้องการโหลดข้อมูล "${template.name}" หรือไม่?`)) {
                     setFormData(template.data);
@@ -439,6 +515,7 @@
                 }
             };
             
+            // Delete Template
             const handleDeleteTemplate = (id) => {
                 if(confirm("ต้องการลบแม่แบบนี้หรือไม่?")) {
                     const updated = savedLabels.filter(l => l.id !== id);
@@ -447,6 +524,7 @@
                 }
             };
 
+            // Drag Handlers
             const handleDragStart = (e) => {
                 isDragging.current = true;
                 const rect = e.currentTarget.parentElement.getBoundingClientRect();
@@ -477,6 +555,7 @@
                 };
             }, []);
 
+            // Handle Pictogram Upload (Multi - up to 9)
             const handlePictogramUpload = (e) => {
                 const files = Array.from(e.target.files);
                 files.forEach(file => {
@@ -498,6 +577,7 @@
                 }));
             };
 
+            // Handle PPE Images Upload (Array) via File Input
             const handlePPEImageUpload = (e, index) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -521,20 +601,26 @@
                 setScales(prev => ({ ...prev, [key]: value }));
             };
 
+            // --- OPEN IN NEW WINDOW (Robust Capture) ---
             const handleOpenImage = async () => {
                 setIsGenerating(true);
                 
+                // Track initial state
                 const wasModalOpen = isModalOpen;
+                // Use the visible modal content
                 if (!isModalOpen) setIsModalOpen(true);
                 
+                // Force scroll to top to prevent html2canvas offset bugs
                 window.scrollTo(0,0);
                 
+                // Wait for layout stability
                 await new Promise(resolve => setTimeout(resolve, 500)); 
                 
                 try {
                     const elementToCapture = document.getElementById('tank-label-modal-content');
                     if (!elementToCapture) throw new Error("Element not found");
 
+                    // USE dom-to-image (Better text rendering) if available, fallback to html2canvas
                     const canvas = await html2canvas(elementToCapture, { 
                         scale: 3, 
                         useCORS: true, 
@@ -546,6 +632,7 @@
 
                     const imgData = canvas.toDataURL('image/png');
 
+                    // Open New Window with Instructions
                     const newWindow = window.open('', '_blank');
                     if (newWindow) {
                         newWindow.document.write(`
@@ -571,6 +658,7 @@
                         alert('หน้าต่างใหม่ถูกบล็อก! โปรดอนุญาต Pop-up สำหรับเว็บไซต์นี้');
                     }
                     
+                    // Restore state: If modal wasn't open originally, close it.
                     if (!wasModalOpen) {
                         setIsModalOpen(false);
                     }
@@ -578,6 +666,62 @@
                 } catch (error) {
                     console.error("Error:", error);
                     alert("เกิดข้อผิดพลาดในการสร้างภาพ");
+                } finally {
+                    setIsGenerating(false);
+                }
+            };
+            
+            // --- NEW: PDF DOWNLOAD FUNCTION ---
+            const handleDownloadPDF = async () => {
+                setIsGenerating(true);
+                const wasModalOpen = isModalOpen;
+                if (!isModalOpen) setIsModalOpen(true);
+                window.scrollTo(0,0);
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+                
+                try {
+                    const elementToCapture = document.getElementById('tank-label-modal-content');
+                    if (!elementToCapture) throw new Error("Element not found");
+
+                    const canvas = await html2canvas(elementToCapture, { 
+                        scale: 2, // High res enough for PDF
+                        useCORS: true, 
+                        logging: false, 
+                        backgroundColor: '#ffffff',
+                        scrollX: 0,
+                        scrollY: -window.scrollY
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    
+                    // Create PDF (A4 Landscape)
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    // Calculate height to fit width (maintain aspect ratio)
+                    const ratio = imgProps.width / imgProps.height;
+                    const width = pdfWidth - 20; // 10mm margin
+                    const height = width / ratio;
+                    
+                    // Center the image
+                    const x = 10;
+                    const y = (pdfHeight - height) / 2;
+
+                    pdf.addImage(imgData, 'PNG', x, y, width, height);
+                    pdf.save(`GHS-Label-${formData.tankId || 'Export'}.pdf`);
+
+                    if (!wasModalOpen) setIsModalOpen(false);
+
+                } catch (error) {
+                    console.error("PDF Error:", error);
+                    alert("เกิดข้อผิดพลาดในการสร้าง PDF");
                 } finally {
                     setIsGenerating(false);
                 }
@@ -649,7 +793,7 @@
                             <div className="space-y-4">
                                 <h3 className="font-bold text-sky-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-sky-100 pb-2"><span className="bg-sky-100 text-sky-600 rounded-lg p-1 text-sm">02</span> ข้อมูลอันตราย</h3>
                                 
-                                {/* Updated Pictogram with Custom Gallery */}
+                                {/* Updated Pictogram Upload (Multi - up to 9) & Gallery */}
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 ml-1 mb-1 flex justify-between">
                                         <span>รูปสัญลักษณ์ (สูงสุด 9 รูป)</span>
@@ -704,11 +848,19 @@
 
                                 {/* PPE Images Upload (3 Slots) */}
                                 <div className="bg-orange-50 p-4 rounded-2xl">
-                                    <label className="text-xs font-bold text-orange-400 mb-1 block">รูป PPE (สูงสุด 3 รูป)</label>
+                                    <label className="text-xs font-bold text-orange-400 mb-1 flex justify-between items-center">
+                                        <span>รูป PPE (สูงสุด 3 รูป)</span>
+                                        <button onClick={() => setShowPPEGallery(true)} className="text-orange-500 hover:underline cursor-pointer flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-full text-[10px]">
+                                            {Icons.Grid} คลังรูป PPE
+                                        </button>
+                                    </label>
                                     <div className="grid grid-cols-3 gap-2">
                                         {[0, 1, 2].map(index => (
                                             <div key={index} className="relative">
-                                                <label className="flex flex-col items-center justify-center p-2 border-2 border-dashed border-orange-200 bg-white rounded-xl cursor-pointer hover:bg-orange-100 transition-colors h-24">
+                                                <div 
+                                                    className="flex flex-col items-center justify-center p-2 border-2 border-dashed border-orange-200 bg-white rounded-xl cursor-pointer hover:bg-orange-100 transition-colors h-24"
+                                                    onClick={() => openPPEGalleryForSlot(index)}
+                                                >
                                                     {formData.ppeImages[index] ? (
                                                         <img src={formData.ppeImages[index]} className="max-h-full max-w-full object-contain" />
                                                     ) : (
@@ -717,8 +869,9 @@
                                                             <span className="text-[10px] font-bold text-orange-400 text-center">รูป {index + 1}</span>
                                                         </>
                                                     )}
-                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePPEImageUpload(e, index)} />
-                                                </label>
+                                                </div>
+                                                {/* Hidden input for direct upload fallback if needed, but we use gallery now predominantly */}
+                                                
                                                 {formData.ppeImages[index] && (
                                                     <button 
                                                         onClick={() => clearPPEImage(index)} 
@@ -771,9 +924,49 @@
                                             {libraryImages.map((imgSrc, i) => (
                                                 <div key={i} className="gallery-item flex flex-col items-center" onClick={() => selectFromLibrary(imgSrc)}>
                                                     <div className="w-16 h-16 relative flex items-center justify-center">
-                                                         <img src={imgSrc} className="max-w-full max-h-full object-contain" />
+                                                         {/* Check if imgSrc is SVG element or string */}
+                                                         {typeof imgSrc === 'string' ? <img src={imgSrc} className="max-w-full max-h-full object-contain" /> : <div className="w-full h-full">{imgSrc}</div>}
                                                     </div>
                                                     <div className="gallery-delete" onClick={(e) => deleteFromLibrary(i, e)} title="ลบออกจากคลัง">
+                                                        {Icons.Trash}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL: PPE GALLERY */}
+                    {showPPEGallery && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden relative">
+                                <div className="p-4 border-b bg-orange-50 flex justify-between items-center"><h3 className="font-bold text-orange-700 text-lg kawaii-font">คลังรูป PPE ส่วนตัว</h3><button onClick={() => setShowPPEGallery(false)} className="text-gray-400 hover:text-red-500">{Icons.Close}</button></div>
+                                
+                                <div className="p-4 bg-orange-50 border-b border-orange-100 flex justify-center">
+                                    <label className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full cursor-pointer flex items-center gap-2 transition shadow-md">
+                                        {Icons.Upload}
+                                        <span>อัปโหลดรูปลงคลัง PPE</span>
+                                        <input type="file" accept="image/*" className="hidden" onChange={addToPPELibrary} />
+                                    </label>
+                                </div>
+
+                                <div className="p-4 overflow-y-auto flex-grow bg-white">
+                                    {ppeLibraryImages.length === 0 ? (
+                                        <div className="text-center text-gray-400 py-10 flex flex-col items-center">
+                                            <div className="opacity-50 mb-2">{Icons.ImageIcon}</div>
+                                            ยังไม่มีรูป PPE ในคลัง<br/>กดปุ่มด้านบนเพื่อเพิ่มรูป
+                                        </div>
+                                    ) : (
+                                        <div className="gallery-grid">
+                                            {ppeLibraryImages.map((imgSrc, i) => (
+                                                <div key={i} className="gallery-item flex flex-col items-center" onClick={() => selectFromPPELibrary(imgSrc)}>
+                                                    <div className="w-16 h-16 relative flex items-center justify-center">
+                                                         <img src={imgSrc} className="max-w-full max-h-full object-contain" />
+                                                    </div>
+                                                    <div className="gallery-delete" onClick={(e) => deleteFromPPELibrary(i, e)} title="ลบออกจากคลัง">
                                                         {Icons.Trash}
                                                     </div>
                                                 </div>
@@ -801,9 +994,11 @@
                                 <div className="p-4 border-b flex justify-between items-center bg-gray-50 z-10 relative"> 
                                     <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2 kawaii-font">{Icons.ImageIcon} ตัวอย่างป้าย</h2>
                                     <div className="flex gap-2">
-                                        {/* Updated: Open in New Window Button */}
+                                        <button onClick={handleDownloadPDF} disabled={isGenerating} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm kawaii-font disabled:opacity-50">
+                                            {Icons.Pdf} {isGenerating ? 'กำลังสร้าง PDF...' : 'บันทึกเป็น PDF'}
+                                        </button>
                                         <button onClick={handleOpenImage} disabled={isGenerating} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm kawaii-font disabled:opacity-50">
-                                            {Icons.NewWindow} {isGenerating ? 'กำลังสร้าง...' : 'เปิดรูปในหน้าต่างใหม่'}
+                                            {Icons.NewWindow} {isGenerating ? 'กำลังสร้างภาพ...' : 'เปิดรูปในหน้าต่างใหม่'}
                                         </button>
                                         <button onClick={() => setIsModalOpen(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-600 p-2 rounded-full transition">{Icons.Close}</button>
                                     </div>
