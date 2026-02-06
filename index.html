@@ -2,74 +2,44 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GHS Label Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHS Label Generator - Professional (Backup Edition)</title>
     
-    <!-- PWA Settings -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="GHS Maker">
-    
-    <!-- 1. Load Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Libraries for Image Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- Google Fonts: Fredoka (Rounded) & Sarabun (Thai) -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600&family=Sarabun:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
         
         body { 
             font-family: 'Sarabun', sans-serif; 
-            background-color: #fff7ed; /* Orange-50 */
-            background-image: radial-gradient(#fed7aa 1px, transparent 1px);
-            background-size: 20px 20px;
-            -webkit-tap-highlight-color: transparent;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 0;
         }
-        
-        h1, h2, h3, .kawaii-font { font-family: 'Fredoka', sans-serif; }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #fdba74; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #fb923c; }
+        ::-webkit-scrollbar-thumb { background: #667eea; border-radius: 10px; }
 
-        /* Cute Inputs */
         input, select, textarea {
             transition: all 0.3s ease;
             border: 2px solid #e5e7eb;
         }
         input:focus, select:focus, textarea:focus {
-            border-color: #7dd3fc;
-            box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
             outline: none;
         }
-
-        /* Print Styles */
-        @media print {
-            @page { size: landscape; margin: 0; }
-            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .no-print { display: none !important; }
-            #tank-label-preview { 
-                position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; 
-                border: none; margin: 0; max-width: none; 
-                box-shadow: none !important;
-                transform: none !important;
-                z-index: 9999;
-            }
-        }
         
-        /* Custom Slider Style */
         input[type=range] {
             height: 25px;
             -webkit-appearance: none;
-            margin: 5px 0;
             width: 100%;
             background: transparent;
         }
@@ -77,8 +47,6 @@
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 8px;
-            cursor: pointer;
-            animate: 0.2s;
             background: #e5e7eb;
             border-radius: 10px;
         }
@@ -86,7 +54,7 @@
             height: 20px;
             width: 20px;
             border-radius: 50%;
-            background: #38bdf8;
+            background: #667eea;
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             cursor: pointer;
@@ -94,18 +62,6 @@
             margin-top: -6px;
         }
 
-        /* Draggable Panel */
-        .draggable-panel { cursor: move; user-select: none; }
-
-        /* Modal Overlay to force Center */
-        .modal-overlay {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-
-        /* Gallery Grid */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
@@ -119,16 +75,15 @@
             transition: all 0.2s;
             position: relative;
             background: white;
+            aspect-ratio: 1/1;
             display: flex;
             align-items: center;
             justify-content: center;
-            aspect-ratio: 1/1;
         }
         .gallery-item:hover {
-            border-color: #38bdf8;
-            background-color: #f0f9ff;
+            border-color: #667eea;
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .gallery-delete {
             position: absolute;
@@ -145,13 +100,18 @@
             font-size: 12px;
             opacity: 0;
             transition: opacity 0.2s;
+            cursor: pointer;
         }
         .gallery-item:hover .gallery-delete {
             opacity: 1;
         }
+
+        @media print {
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
-<body class="text-gray-700">
+<body>
 
     <div id="root"></div>
 
@@ -159,47 +119,53 @@
         const { useState, useEffect, useRef } = React;
         const { jsPDF } = window.jspdf;
 
-        // --- ICONS ---
-        const Icons = {
-            Printer: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>,
-            Settings: <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
-            Upload: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-            Type: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>,
-            Download: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-            Close: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-            Trash: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
-            ImageIcon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-            Maximize: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>,
-            Move: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>,
-            Folder: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>,
-            SaveDisk: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>,
-            NewWindow: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>,
-            Grid: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
-            Plus: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-            Pdf: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        // --- Helper: Image Compressor ---
+        const compressImage = (base64Str, maxWidth = 300, quality = 0.7) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = () => resolve(base64Str); // Fallback
+            });
         };
 
-        // --- COMPONENTS ---
+        // NFPA Diamond Component
         const NFPADiamond = ({ health, flammability, instability, special }) => (
-            <div className="relative w-full h-full transform hover:scale-105 transition-transform duration-300">
+            <div className="relative w-full h-full">
                 <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md">
                     <polygon points="50,50 25,75 0,50 25,25" fill="#60A5FA" stroke="black" strokeWidth="1" />
                     <polygon points="50,50 25,25 50,0 75,25" fill="#F87171" stroke="black" strokeWidth="1" />
                     <polygon points="50,50 75,25 100,50 75,75" fill="#FBBF24" stroke="black" strokeWidth="1" />
                     <polygon points="50,50 75,75 50,100 25,75" fill="white" stroke="black" strokeWidth="1" />
-                    <text x="25" y="55" textAnchor="middle" fontSize="22" fontWeight="bold" fill="black" className="font-sans">{health}</text>
-                    <text x="50" y="30" textAnchor="middle" fontSize="22" fontWeight="bold" fill="black" className="font-sans">{flammability}</text>
-                    <text x="75" y="55" textAnchor="middle" fontSize="22" fontWeight="bold" fill="black" className="font-sans">{instability}</text>
-                    <text x="50" y="80" textAnchor="middle" fontSize="16" fontWeight="bold" fill="black" className="font-sans">{special}</text>
+                    <text x="25" y="55" textAnchor="middle" fontSize="22" fontWeight="bold" fill="black">{health}</text>
+                    <text x="50" y="30" textAnchor="middle" fontSize="22" fontWeight="bold" fill="black">{flammability}</text>
+                    <text x="75" y="55" textAnchor="middle" fontSize="22" fontWeight="bold" fill="black">{instability}</text>
+                    <text x="50" y="80" textAnchor="middle" fontSize="16" fontWeight="bold" fill="black">{special}</text>
                 </svg>
             </div>
         );
 
+        // Font Slider Component
         const FontSlider = ({ label, value, onChange, min = 0.5, max = 2.0, step = 0.05 }) => (
-            <div className="flex flex-col mb-2 p-2 bg-white rounded-lg border border-orange-100 shadow-sm">
+            <div className="flex flex-col mb-2 p-2 bg-white rounded-lg border shadow-sm">
                 <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs font-bold text-orange-500 kawaii-font tracking-wide">{label}</label>
-                    <span className="text-[10px] text-sky-500 font-bold bg-sky-50 px-2 py-0.5 rounded-full">{Math.round(value * 100)}%</span>
+                    <label className="text-xs font-bold text-gray-600">{label}</label>
+                    <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full">{Math.round(value * 100)}%</span>
                 </div>
                 <input 
                     type="range" 
@@ -212,214 +178,213 @@
             </div>
         );
 
-        // --- SHARED LABEL RENDERER ---
-        const GHSLabel = ({ formData, scales, id, onClick, isModal }) => (
-            <div id={id} onClick={onClick} className={`bg-white border-4 border-black w-full aspect-[1.5/1] flex flex-col shadow-2xl relative overflow-hidden leading-tight mx-auto transition-all duration-300 ${onClick ? 'cursor-pointer' : ''} ${isModal ? '' : 'hover:shadow-orange-200/50 hover:scale-[1.01]'}`}>
+        // GHS Label Component
+        const GHSLabel = ({ formData, scales, id, onClick }) => (
+            <div 
+                id={id} 
+                onClick={onClick} 
+                className={`bg-white border-4 border-black w-full aspect-[1.5/1] flex flex-col shadow-2xl relative overflow-hidden ${onClick ? 'cursor-pointer hover:scale-[1.01]' : ''} transition-all duration-300`}
+            >
                 {/* Header */}
-                <div className="flex border-b-4 border-black h-[18%] box-border">
-                    <div className="w-[25%] bg-yellow-300 flex items-center justify-center border-r-4 border-black p-1">
-                        <span className="font-black font-mono tracking-tighter leading-none" style={{ fontSize: `${2.5 * scales.tankId}rem` }}>{formData.tankId}</span>
+                <div className="flex border-b-4 border-black h-[18%]">
+                    <div className="w-[25%] bg-yellow-300 flex items-center justify-center text-center border-r-4 border-black p-1 overflow-hidden">
+                        <span className="font-black font-mono w-full leading-none break-words" style={{ fontSize: `${2.5 * scales.tankId}rem` }}>{formData.tankId}</span>
                     </div>
-                    <div className="w-[55%] flex items-center justify-center p-2 text-center border-r-4 border-black">
-                        <span className="font-black uppercase leading-none" style={{ fontSize: `${2.2 * scales.productName}rem` }}>{formData.productName || "CHEMICAL NAME"}</span>
+                    <div className="w-[55%] flex items-center justify-center text-center border-r-4 border-black p-2 overflow-hidden">
+                        <span className="font-black uppercase w-full leading-none break-words" style={{ fontSize: `${2.2 * scales.productName}rem` }}>{formData.productName || "CHEMICAL NAME"}</span>
                     </div>
-                    <div className="w-[20%] flex flex-col items-center justify-center p-1 bg-gray-100">
-                        <span className="font-bold text-gray-500 text-[10px] uppercase leading-none mb-1" style={{ fontSize: `${0.7 * scales.unNumber}rem` }}>UN Number / หมายเลข UN</span>
-                        <span className="font-black font-mono leading-none" style={{ fontSize: `${2 * scales.unNumber}rem` }}>{formData.unNumber || "----"}</span>
+                    <div className="w-[20%] flex flex-col items-center justify-center text-center p-1 bg-gray-100">
+                        <span className="font-bold text-gray-500 text-xs uppercase mb-1 w-full">UN Number</span>
+                        <span className="font-black font-mono leading-none w-full" style={{ fontSize: `${2 * scales.unNumber}rem` }}>{formData.unNumber || "----"}</span>
                     </div>
                 </div>
 
-                {/* Body - Main Content Area */}
-                <div className="flex flex-grow h-[82%]">
-                    
-                    {/* LEFT COLUMN (30%) */}
-                    <div className="w-[30%] border-r-4 border-black flex flex-col border-b-4 border-black box-border">
-                        
-                        {/* Upper: Pictogram (Merged Pictogram+Signal Word) */}
-                         <div className="flex-grow flex flex-col items-center justify-center p-1 overflow-hidden relative bg-white">
-                            {/* Pictogram Area - Multi Images */}
-                            <div className="flex-grow flex flex-wrap items-center justify-center w-full gap-1 p-1 content-center" style={{ transform: `translate(${scales.picX || 0}px, ${scales.picY || 0}px) scale(${scales.picScale || 1})` }}>
-                                {formData.pictograms.length > 0 ? (
-                                    formData.pictograms.map((img, i) => {
-                                        // Smart sizing logic
-                                        const count = formData.pictograms.length;
-                                        let sizeClass = "w-[45%] h-[45%]"; // Default 2-4 images
-                                        if (count === 1) sizeClass = "w-[85%] h-[85%]";
-                                        if (count > 4) sizeClass = "w-[30%] h-[30%]";
-                                        
-                                        // If it's a data URI (SVG/PNG), render as img
-                                        if (typeof img === 'string' && img.startsWith('data:')) {
-                                            return <img key={i} src={img} className={`object-contain ${sizeClass}`} />;
-                                        } 
-                                        return (
-                                            <div key={i} className={`flex items-center justify-center ${sizeClass}`}>
-                                                <svg viewBox="0 0 100 100" className="w-full h-full">{img}</svg>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
-                                    <div className="text-gray-300 text-[10px] text-center w-full h-full flex items-center justify-center border border-dashed border-gray-200">รูปสัญลักษณ์ (สูงสุด 9 รูป)</div>
-                                )}
-                            </div>
-                            
-                            {/* Signal Word Area (Directly below) */}
-                            <div className="h-auto pb-2 pt-1 flex items-center justify-center relative bg-white w-full">
-                                 {formData.signalWord && (
-                                    <div className="font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center justify-center w-full text-center text-black" style={{ fontSize: `${1.5 * scales.signal}rem` }}>
-                                        <span className="leading-none">{formData.signalWord}</span>
-                                    </div>
-                                )}
-                            </div>
+                {/* Body */}
+                <div className="flex flex-grow border-b-4 border-black h-[62%]">
+                    {/* Left: Pictogram + Signal */}
+                    <div className="w-[30%] border-r-4 border-black flex flex-col">
+                        <div className="h-[75%] flex flex-wrap items-center justify-center gap-1 p-1 content-center overflow-hidden" style={{ transform: `translate(${scales.picX || 0}px, ${scales.picY || 0}px) scale(${scales.picScale || 1})` }}>
+                            {formData.pictograms.length > 0 ? (
+                                formData.pictograms.map((img, i) => {
+                                    const count = formData.pictograms.length;
+                                    let sizeClass = count === 1 ? "w-[85%] h-[85%]" : count > 4 ? "w-[30%] h-[30%]" : "w-[45%] h-[45%]";
+                                    return <img key={i} src={img} className={`object-contain ${sizeClass}`} alt="Pictogram" />;
+                                })
+                            ) : (
+                                <div className="text-gray-300 text-xs text-center">รูปสัญลักษณ์</div>
+                            )}
                         </div>
 
+                        <div className="h-[25%] flex items-center justify-center p-1 bg-white">
+                            {formData.signalWord && (
+                                <div className="font-black uppercase px-2 py-0.5 rounded text-center text-black" style={{ fontSize: `${1.5 * scales.signal}rem` }}>
+                                    {formData.signalWord}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     
-                    {/* RIGHT COLUMN (70%) */}
-                    <div className="w-[70%] flex flex-col border-b-4 border-black box-border">
-                        
-                        {/* Top: Hazard & Precautionary Statements */}
-                        <div className="flex-grow p-4 flex flex-col justify-start overflow-hidden relative">
-                            {/* Hazard Statements */}
-                            <div className="mb-4">
-                                <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.hazard}rem` }}>HAZARD STATEMENTS (ข้อความระบุอันตราย):</h3>
-                                <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.hazard}rem` }}>{formData.hazardStatements || "..."}</p>
-                            </div>
+                    {/* Right: Text */}
+                    <div className="w-[70%] p-4 flex flex-col justify-start overflow-hidden">
+                        <div className="mb-4">
+                            <h3 className="font-bold underline mb-1" style={{ fontSize: `${1.2 * scales.hazard}rem` }}>HAZARD STATEMENTS:</h3>
+                            <p className="whitespace-pre-line font-semibold" style={{ fontSize: `${1 * scales.hazard}rem` }}>{formData.hazardStatements || "..."}</p>
+                        </div>
 
-                            {/* Precautionary Statements */}
-                            <div>
-                                <h3 className="font-bold underline mb-1 leading-none" style={{ fontSize: `${1.2 * scales.precaution}rem` }}>PRECAUTIONARY STATEMENTS (ข้อควรระวัง):</h3>
-                                <p className="whitespace-pre-line font-semibold leading-relaxed" style={{ fontSize: `${1 * scales.precaution}rem` }}>{formData.precautionaryStatements || "..."}</p>
-                            </div>
+                        <div>
+                            <h3 className="font-bold underline mb-1" style={{ fontSize: `${1.2 * scales.precaution}rem` }}>PRECAUTIONARY STATEMENTS:</h3>
+                            <p className="whitespace-pre-line font-semibold" style={{ fontSize: `${1 * scales.precaution}rem` }}>{formData.precautionaryStatements || "..."}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="h-[20%] flex box-border">
-                    {/* Left: NFPA (Moved Here) */}
-                   <div className="w-[30%] border-r-4 border-black p-2 flex flex-col bg-white items-center justify-center relative">
-                        {/* Wrapper to control max size and padding */}
-                        <div className="w-full h-full flex items-center justify-center p-2">
-                            <div className="aspect-square h-full max-h-[100px]" style={{ transform: `scale(${scales.nfpa})` }}>
-                                <NFPADiamond 
-                                    health={formData.nfpaHealth} 
-                                    flammability={formData.nfpaFlammability} 
-                                    instability={formData.nfpaInstability} 
-                                    special={formData.nfpaSpecial} 
-                                />
-                            </div>
+                <div className="h-[20%] flex">
+                    <div className="w-[30%] border-r-4 border-black p-2 flex items-center justify-center bg-white">
+                        <div className="aspect-square h-full max-h-[100px]" style={{ transform: `scale(${scales.nfpa})` }}>
+                            <NFPADiamond 
+                                health={formData.nfpaHealth} 
+                                flammability={formData.nfpaFlammability} 
+                                instability={formData.nfpaInstability} 
+                                special={formData.nfpaSpecial} 
+                            />
                         </div>
                     </div>
 
-                    {/* Right: PPE Specific (Widened) */}
-                    <div className="w-[70%] p-3 flex flex-col bg-blue-50 relative border-r-0">
-                         <div className="flex justify-between items-start mb-1">
-                             <h3 className="font-bold uppercase text-blue-900 leading-none text-[10px] underline" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
-                                PPE SPECIFIC / อุปกรณ์ป้องกันพิเศษในสภาวะปกติ
-                             </h3>
-                         </div>
-                         
-                         <div className="flex flex-row h-full gap-2">
-                             {/* PPE Text */}
-                             <div className="flex-grow w-[60%] overflow-hidden pr-1">
-                                 <p className="whitespace-pre-line font-semibold text-blue-900 leading-tight" style={{ fontSize: `${0.9 * scales.ppeText}rem` }}>
+                    <div className="w-[70%] p-3 pb-4 flex flex-col bg-blue-50">
+                        <h3 className="font-bold uppercase text-blue-900 text-xs mb-1 underline" style={{ fontSize: `${0.8 * scales.ppeHeader}rem` }}>
+                            PPE SPECIFIC
+                        </h3>
+                        
+                        <div className="flex flex-row h-full gap-2">
+                            <div className="flex-grow w-[45%] overflow-hidden">
+                                <p className="whitespace-pre-line font-semibold text-blue-900" style={{ fontSize: `${0.9 * scales.ppeText}rem` }}>
                                     {formData.ppeText || "ระบุอุปกรณ์ป้องกัน..."}
-                                 </p>
-                             </div>
-                             
-                             {/* PPE Images (3 Slots) */}
-                             <div className="w-[40%] flex items-center justify-end gap-1 pb-2">
-                                 {formData.ppeImages.map((img, i) => (
-                                     <div key={i} className={`h-full w-1/3 flex items-center justify-center p-0.5 ${img ? 'border border-dashed border-blue-300 bg-white' : ''}`}>
-                                        {img && <img src={img} className="max-h-full max-w-full object-contain" />}
-                                     </div>
-                                 ))}
-                             </div>
-                         </div>
+                                </p>
+                            </div>
+                            
+                            <div className="w-[55%] flex items-center justify-end gap-1 pb-1">
+                                {formData.ppeImages.map((img, i) => (
+                                    <div key={i} className={`h-full w-1/5 flex items-center justify-center ${img ? 'border border-blue-200 bg-white' : ''}`}>
+                                        {img && <img src={img} className="max-h-full max-w-full object-contain" alt={`PPE ${i+1}`} />}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         );
 
-        // --- MAIN APP ---
+        // Main App
         function App() {
             const [formData, setFormData] = useState({
                 tankId: 'T-0101',
                 productName: '',
                 unNumber: '',
-                signalWord: 'DANGER อันตราย',
+                signalWord: 'DANGER',
                 hazardStatements: '',
                 precautionaryStatements: '', 
                 ppeText: '', 
-                pictograms: [], // Array for multiple pictograms (max 9)
-                ppeImages: [null, null, null], // Array for 3 PPE images
-                nfpaHealth: 0, nfpaFlammability: 0, nfpaInstability: 0, nfpaSpecial: '',
+                pictograms: [], 
+                ppeImages: [null, null, null, null, null],
+                nfpaHealth: 0, 
+                nfpaFlammability: 0, 
+                nfpaInstability: 0, 
+                nfpaSpecial: '',
             });
 
             const [scales, setScales] = useState({
-                tankId: 1, productName: 1, unNumber: 1, hazard: 1, precaution: 1, ppeText: 1, ppeHeader: 1, 
-                signal: 1, pictogram: 1, nfpa: 1,
+                tankId: 1, productName: 1, unNumber: 1, hazard: 1, precaution: 1, 
+                ppeText: 1, ppeHeader: 1, signal: 1, nfpa: 1,
                 picX: 0, picY: 0, picScale: 1
             });
             
-            // New: Personal Library State
             const [libraryImages, setLibraryImages] = useState([]);
-            
-            // New: Personal PPE Library State
             const [ppeLibraryImages, setPpeLibraryImages] = useState([]);
-            const [activePPESlot, setActivePPESlot] = useState(null); // Track which PPE slot (0,1,2) is being filled
-            
+            const [activePPESlot, setActivePPESlot] = useState(null);
             const [savedLabels, setSavedLabels] = useState([]);
+            
             const [showFontPanel, setShowFontPanel] = useState(false);
             const [showLibrary, setShowLibrary] = useState(false);
-            const [showGallery, setShowGallery] = useState(false); // Used for My Pictogram Library
-            const [showPPEGallery, setShowPPEGallery] = useState(false); // Used for My PPE Library
-            const [panelPosition, setPanelPosition] = useState({ x: 20, y: 100 }); 
-            const isDragging = useRef(false);
-            const dragOffset = useRef({ x: 0, y: 0 });
-
+            const [showGallery, setShowGallery] = useState(false);
+            const [showPPEGallery, setShowPPEGallery] = useState(false);
+            
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [isGenerating, setIsGenerating] = useState(false);
 
+            // Load from localStorage
             useEffect(() => {
-                const params = new URLSearchParams(window.location.search);
-                if (params.has('tankId')) setFormData(prev => ({ ...prev, tankId: params.get('tankId') }));
-                if (params.has('product')) setFormData(prev => ({ ...prev, productName: params.get('product') }));
-                if (params.has('un')) setFormData(prev => ({ ...prev, unNumber: params.get('un') }));
-                if (params.has('signal')) setFormData(prev => ({ ...prev, signalWord: params.get('signal') }));
-                if (params.has('hzd')) setFormData(prev => ({ ...prev, hazardStatements: decodeURIComponent(params.get('hzd')) }));
-                if (params.has('prec')) setFormData(prev => ({ ...prev, precautionaryStatements: decodeURIComponent(params.get('prec')) }));
-                if (params.has('ppe')) setFormData(prev => ({ ...prev, ppeText: decodeURIComponent(params.get('ppe')) }));
-
-                // Load saved templates
                 const saved = localStorage.getItem('ghs_templates');
-                if (saved) {
-                    try { setSavedLabels(JSON.parse(saved)); } catch (e) {}
-                }
+                if (saved) try { setSavedLabels(JSON.parse(saved)); } catch (e) {}
                 
-                // Load My Pictogram Library
                 const lib = localStorage.getItem('ghs_my_pictograms');
-                if (lib) {
-                     try { setLibraryImages(JSON.parse(lib)); } catch (e) {}
-                }
+                if (lib) try { setLibraryImages(JSON.parse(lib)); } catch (e) {}
                 
-                // Load My PPE Library
                 const ppeLib = localStorage.getItem('ghs_my_ppe_library');
-                if (ppeLib) {
-                     try { setPpeLibraryImages(JSON.parse(ppeLib)); } catch (e) {}
-                }
+                if (ppeLib) try { setPpeLibraryImages(JSON.parse(ppeLib)); } catch (e) {}
             }, []);
 
-            // --- LIBRARY FUNCTIONS (Pictogram) ---
+            // Data Export/Import Functions
+            const handleExportData = () => {
+                const data = {
+                    savedLabels,
+                    libraryImages,
+                    ppeLibraryImages
+                };
+                const jsonStr = JSON.stringify(data);
+                const blob = new Blob([jsonStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `GHS_Backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+            };
+
+            const handleImportData = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if(confirm("การนำเข้าข้อมูลจะทับข้อมูลปัจจุบัน ต้องการทำต่อหรือไม่?")) {
+                            if (data.savedLabels) {
+                                setSavedLabels(data.savedLabels);
+                                localStorage.setItem('ghs_templates', JSON.stringify(data.savedLabels));
+                            }
+                            if (data.libraryImages) {
+                                setLibraryImages(data.libraryImages);
+                                localStorage.setItem('ghs_my_pictograms', JSON.stringify(data.libraryImages));
+                            }
+                            if (data.ppeLibraryImages) {
+                                setPpeLibraryImages(data.ppeLibraryImages);
+                                localStorage.setItem('ghs_my_ppe_library', JSON.stringify(data.ppeLibraryImages));
+                            }
+                            alert("นำเข้าข้อมูลสำเร็จ!");
+                            setShowLibrary(false);
+                        }
+                    } catch (err) {
+                        alert("ไฟล์ไม่ถูกต้อง");
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            // Library Functions with Compression
             const addToLibrary = (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const newImg = reader.result;
-                        const newLib = [...libraryImages, newImg];
-                        setLibraryImages(newLib);
-                        localStorage.setItem('ghs_my_pictograms', JSON.stringify(newLib));
+                    reader.onloadend = async () => {
+                        const compressed = await compressImage(reader.result); // Compress!
+                        try {
+                            const newLib = [...libraryImages, compressed];
+                            setLibraryImages(newLib);
+                            localStorage.setItem('ghs_my_pictograms', JSON.stringify(newLib));
+                        } catch (err) {
+                            alert("เมมโมรี่เต็ม! กรุณาลบรูปที่ไม่ใช้ออก หรือใช้ฟีเจอร์ Backup");
+                        }
                     };
                     reader.readAsDataURL(file);
                 }
@@ -437,19 +402,22 @@
                     ...prev, 
                     pictograms: [...prev.pictograms, imgSrc].slice(0, 9) 
                 }));
-                // setShowGallery(false);
             };
 
-            // --- LIBRARY FUNCTIONS (PPE) ---
+            // PPE Library Functions with Compression
             const addToPPELibrary = (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const newImg = reader.result;
-                        const newLib = [...ppeLibraryImages, newImg];
-                        setPpeLibraryImages(newLib);
-                        localStorage.setItem('ghs_my_ppe_library', JSON.stringify(newLib));
+                    reader.onloadend = async () => {
+                        const compressed = await compressImage(reader.result); // Compress!
+                        try {
+                            const newLib = [...ppeLibraryImages, compressed];
+                            setPpeLibraryImages(newLib);
+                            localStorage.setItem('ghs_my_ppe_library', JSON.stringify(newLib));
+                        } catch (err) {
+                            alert("เมมโมรี่เต็ม! กรุณาลบรูปที่ไม่ใช้ออก");
+                        }
                     };
                     reader.readAsDataURL(file);
                 }
@@ -462,7 +430,6 @@
                 localStorage.setItem('ghs_my_ppe_library', JSON.stringify(newLib));
             };
             
-            // Function to open PPE gallery for a specific slot
             const openPPEGalleryForSlot = (index) => {
                 setActivePPESlot(index);
                 setShowPPEGallery(true);
@@ -470,53 +437,54 @@
 
             const selectFromPPELibrary = (imgSrc) => {
                 if (activePPESlot !== null) {
-                     // If we know which slot to fill (clicked from the slot itself)
-                     const newImages = [...formData.ppeImages];
-                     newImages[activePPESlot] = imgSrc;
-                     setFormData(prev => ({ ...prev, ppeImages: newImages }));
-                     setShowPPEGallery(false);
-                     setActivePPESlot(null);
+                    const newImages = [...formData.ppeImages];
+                    newImages[activePPESlot] = imgSrc;
+                    setFormData(prev => ({ ...prev, ppeImages: newImages }));
+                    setShowPPEGallery(false);
+                    setActivePPESlot(null);
                 } else {
-                     // Fallback: fill first empty slot or alert if full (user clicked library button directly)
-                     const emptyIndex = formData.ppeImages.findIndex(img => img === null);
-                     if (emptyIndex !== -1) {
-                         const newImages = [...formData.ppeImages];
-                         newImages[emptyIndex] = imgSrc;
-                         setFormData(prev => ({ ...prev, ppeImages: newImages }));
-                         setShowPPEGallery(false);
-                     } else {
-                         alert("ช่องใส่รูปเต็มแล้ว (กรุณาลบรูปเก่าออกก่อน)");
-                     }
+                    const emptyIndex = formData.ppeImages.findIndex(img => img === null);
+                    if (emptyIndex !== -1) {
+                        const newImages = [...formData.ppeImages];
+                        newImages[emptyIndex] = imgSrc;
+                        setFormData(prev => ({ ...prev, ppeImages: newImages }));
+                        setShowPPEGallery(false);
+                    } else {
+                        alert("ช่องใส่รูปเต็มแล้ว กรุณาลบรูปเก่าออกก่อน");
+                    }
                 }
             };
 
-            // Save Template
+            // Template Functions with Try-Catch
             const handleSaveTemplate = () => {
                 if (!formData.productName) {
                     alert("กรุณากรอกชื่อสารเคมีก่อนบันทึก");
                     return;
                 }
-                const name = prompt("ตั้งชื่อแม่แบบ (Template Name):", formData.productName);
+                const name = prompt("ตั้งชื่อแม่แบบ:", formData.productName);
                 if (name) {
-                    const newTemplate = { id: Date.now(), name, data: { ...formData }, scales: { ...scales } };
-                    const updated = [newTemplate, ...savedLabels];
-                    setSavedLabels(updated);
-                    localStorage.setItem('ghs_templates', JSON.stringify(updated));
-                    alert("บันทึกในเครื่องนี้เรียบร้อย!");
+                    try {
+                        const newTemplate = { id: Date.now(), name, data: { ...formData }, scales: { ...scales } };
+                        const updated = [newTemplate, ...savedLabels];
+                        localStorage.setItem('ghs_templates', JSON.stringify(updated));
+                        setSavedLabels(updated);
+                        alert("บันทึกเรียบร้อย!");
+                    } catch (e) {
+                        alert("บันทึกไม่สำเร็จ! พื้นที่จัดเก็บเต็ม กรุณาลบแม่แบบเก่าๆ หรือสำรองข้อมูลแล้วล้างค่า");
+                    }
                 }
             };
             
-            // Load Template
             const handleLoadTemplate = (template) => {
-                if(confirm(`ต้องการโหลดข้อมูล "${template.name}" หรือไม่?`)) {
+                if(confirm(`ต้องการโหลด "${template.name}" หรือไม่?`)) {
                     setFormData(template.data);
                     if(template.scales) setScales(template.scales);
                     setShowLibrary(false);
                 }
             };
             
-            // Delete Template
-            const handleDeleteTemplate = (id) => {
+            const handleDeleteTemplate = (id, e) => {
+                e.stopPropagation();
                 if(confirm("ต้องการลบแม่แบบนี้หรือไม่?")) {
                     const updated = savedLabels.filter(l => l.id !== id);
                     setSavedLabels(updated);
@@ -524,46 +492,16 @@
                 }
             };
 
-            // Drag Handlers
-            const handleDragStart = (e) => {
-                isDragging.current = true;
-                const rect = e.currentTarget.parentElement.getBoundingClientRect();
-                dragOffset.current = {
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                };
-            };
-
-            const handleDragMove = (e) => {
-                if (!isDragging.current) return;
-                setPanelPosition({
-                    x: e.clientX - dragOffset.current.x,
-                    y: e.clientY - dragOffset.current.y
-                });
-            };
-
-            const handleDragEnd = () => {
-                isDragging.current = false;
-            };
-
-            useEffect(() => {
-                window.addEventListener('mousemove', handleDragMove);
-                window.addEventListener('mouseup', handleDragEnd);
-                return () => {
-                    window.removeEventListener('mousemove', handleDragMove);
-                    window.removeEventListener('mouseup', handleDragEnd);
-                };
-            }, []);
-
-            // Handle Pictogram Upload (Multi - up to 9)
+            // Pictogram Upload with Compression
             const handlePictogramUpload = (e) => {
                 const files = Array.from(e.target.files);
                 files.forEach(file => {
                     const reader = new FileReader();
-                    reader.onloadend = () => {
+                    reader.onloadend = async () => {
+                        const compressed = await compressImage(reader.result); // Compress!
                         setFormData(prev => ({ 
                             ...prev, 
-                            pictograms: [...prev.pictograms, reader.result].slice(0, 9)
+                            pictograms: [...prev.pictograms, compressed].slice(0, 9)
                         }));
                     };
                     reader.readAsDataURL(file);
@@ -577,20 +515,6 @@
                 }));
             };
 
-            // Handle PPE Images Upload (Array) via File Input
-            const handlePPEImageUpload = (e, index) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const newImages = [...formData.ppeImages];
-                        newImages[index] = reader.result;
-                        setFormData(prev => ({ ...prev, ppeImages: newImages }));
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-
             const clearPPEImage = (index) => {
                 const newImages = [...formData.ppeImages];
                 newImages[index] = null;
@@ -601,82 +525,13 @@
                 setScales(prev => ({ ...prev, [key]: value }));
             };
 
-            // --- OPEN IN NEW WINDOW (Robust Capture) ---
-            const handleOpenImage = async () => {
-                setIsGenerating(true);
-                
-                // Track initial state
-                const wasModalOpen = isModalOpen;
-                // Use the visible modal content
-                if (!isModalOpen) setIsModalOpen(true);
-                
-                // Force scroll to top to prevent html2canvas offset bugs
-                window.scrollTo(0,0);
-                
-                // Wait for layout stability
-                await new Promise(resolve => setTimeout(resolve, 500)); 
-                
-                try {
-                    const elementToCapture = document.getElementById('tank-label-modal-content');
-                    if (!elementToCapture) throw new Error("Element not found");
-
-                    // USE dom-to-image (Better text rendering) if available, fallback to html2canvas
-                    const canvas = await html2canvas(elementToCapture, { 
-                        scale: 3, 
-                        useCORS: true, 
-                        logging: false, 
-                        backgroundColor: '#ffffff',
-                        scrollX: 0,
-                        scrollY: -window.scrollY
-                    });
-
-                    const imgData = canvas.toDataURL('image/png');
-
-                    // Open New Window with Instructions
-                    const newWindow = window.open('', '_blank');
-                    if (newWindow) {
-                        newWindow.document.write(`
-                            <html>
-                                <head>
-                                    <title>GHS Label Image - ${formData.tankId || 'Image'}</title>
-                                    <style>
-                                        body { margin: 0; padding: 20px; background: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
-                                        img { max-width: 90%; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 10px solid white; margin-bottom: 20px; }
-                                        .instructions { color: white; font-size: 1.2em; background: rgba(0,0,0,0.5); padding: 15px 30px; border-radius: 50px; text-align: center; }
-                                    </style>
-                                </head>
-                                <body>
-                                    <img src="${imgData}" alt="GHS Label" />
-                                    <div class="instructions">
-                                        👉 <strong>คลิกขวาที่รูปภาพ</strong> แล้วเลือก <strong>"บันทึกรูปภาพเป็น..." (Save Image As...)</strong>
-                                    </div>
-                                </body>
-                            </html>
-                        `);
-                        newWindow.document.close();
-                    } else {
-                        alert('หน้าต่างใหม่ถูกบล็อก! โปรดอนุญาต Pop-up สำหรับเว็บไซต์นี้');
-                    }
-                    
-                    // Restore state: If modal wasn't open originally, close it.
-                    if (!wasModalOpen) {
-                        setIsModalOpen(false);
-                    }
-
-                } catch (error) {
-                    console.error("Error:", error);
-                    alert("เกิดข้อผิดพลาดในการสร้างภาพ");
-                } finally {
-                    setIsGenerating(false);
-                }
-            };
-            
-            // --- NEW: PDF DOWNLOAD FUNCTION ---
+            // PDF Download
             const handleDownloadPDF = async () => {
                 setIsGenerating(true);
+                const currentScrollY = window.scrollY;
                 const wasModalOpen = isModalOpen;
                 if (!isModalOpen) setIsModalOpen(true);
-                window.scrollTo(0,0);
+                
                 await new Promise(resolve => setTimeout(resolve, 500)); 
                 
                 try {
@@ -684,33 +539,22 @@
                     if (!elementToCapture) throw new Error("Element not found");
 
                     const canvas = await html2canvas(elementToCapture, { 
-                        scale: 2, // High res enough for PDF
+                        scale: 2,
                         useCORS: true, 
                         logging: false, 
                         backgroundColor: '#ffffff',
-                        scrollX: 0,
-                        scrollY: -window.scrollY
+                        windowWidth: elementToCapture.scrollWidth,
+                        windowHeight: elementToCapture.scrollHeight
                     });
 
                     const imgData = canvas.toDataURL('image/png');
-                    
-                    // Create PDF (A4 Landscape)
-                    const pdf = new jsPDF({
-                        orientation: 'landscape',
-                        unit: 'mm',
-                        format: 'a4'
-                    });
-                    
+                    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                     const imgProps = pdf.getImageProperties(imgData);
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const pdfHeight = pdf.internal.pageSize.getHeight();
-                    
-                    // Calculate height to fit width (maintain aspect ratio)
                     const ratio = imgProps.width / imgProps.height;
-                    const width = pdfWidth - 20; // 10mm margin
+                    const width = pdfWidth - 20;
                     const height = width / ratio;
-                    
-                    // Center the image
                     const x = 10;
                     const y = (pdfHeight - height) / 2;
 
@@ -718,7 +562,7 @@
                     pdf.save(`GHS-Label-${formData.tankId || 'Export'}.pdf`);
 
                     if (!wasModalOpen) setIsModalOpen(false);
-
+                    setTimeout(() => window.scrollTo(0, currentScrollY), 100);
                 } catch (error) {
                     console.error("PDF Error:", error);
                     alert("เกิดข้อผิดพลาดในการสร้าง PDF");
@@ -728,158 +572,158 @@
             };
 
             return (
-                <div className="min-h-screen relative pb-10">
+                <div className="min-h-screen pb-10">
                     
-                    {/* Header Bar */}
-                    <div className="no-print bg-white/80 backdrop-blur-md shadow-sm border-b border-orange-100 sticky top-0 z-50">
-                        <div className="max-w-7xl mx-auto p-3 flex flex-col md:flex-row justify-between items-center gap-3">
-                            <h1 className="text-2xl font-bold text-orange-500 flex items-center gap-2 kawaii-font">
-                                <span className="bg-orange-100 p-2 rounded-full">{Icons.Settings}</span>
+                    {/* Header */}
+                    <div className="no-print bg-white/95 backdrop-blur-lg shadow-sm border-b sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+                            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-2 rounded-lg">⚗️</span>
                                 ระบบสร้างป้าย GHS
                             </h1>
                             
-                            <div className="flex flex-wrap items-center gap-2 justify-center relative">
-                                <button onClick={() => setShowLibrary(true)} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font bg-yellow-100 border-yellow-400 text-yellow-700 hover:bg-yellow-200">
-                                    {Icons.Folder} คลังป้าย (ส่วนตัว)
+                            <div className="flex flex-wrap gap-2">
+                                <button onClick={() => setShowLibrary(true)} className="px-4 py-2 rounded-lg bg-yellow-100 border border-yellow-300 text-yellow-700 hover:bg-yellow-200 font-semibold transition">
+                                    📁 คลังป้าย
                                 </button>
-                                
-                                <button onClick={handleSaveTemplate} className="flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font bg-white border-green-400 text-green-700 hover:bg-green-50">
-                                    {Icons.SaveDisk} บันทึก
+                                <button onClick={handleSaveTemplate} className="px-4 py-2 rounded-lg bg-green-100 border border-green-300 text-green-700 hover:bg-green-200 font-semibold transition">
+                                    💾 บันทึก
                                 </button>
-                                
-                                <button onClick={() => setShowFontPanel(!showFontPanel)} className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-bold text-sm kawaii-font ${showFontPanel ? 'bg-sky-100 border-sky-400 text-sky-700' : 'bg-white border-gray-200 text-gray-600 hover:border-sky-300 hover:bg-sky-50'}`}>
-                                    {Icons.Type} ปรับขนาดอักษร
+                                <button onClick={() => setShowFontPanel(!showFontPanel)} className={`px-4 py-2 rounded-lg font-semibold transition ${showFontPanel ? 'bg-indigo-100 border-indigo-300 text-indigo-700' : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200'}`}>
+                                    🔤 ปรับขนาด
                                 </button>
-
-                                {showFontPanel && (
-                                    <div className="fixed bg-white p-5 shadow-2xl border-2 border-orange-100 rounded-3xl z-[9999] w-80 grid grid-cols-1 gap-1 animate-fade-in-down" style={{ left: `${panelPosition.x}px`, top: `${panelPosition.y}px` }}>
-                                        <div className="flex justify-between items-center border-b border-dashed pb-2 mb-2 draggable-panel" onMouseDown={handleDragStart}>
-                                            <h3 className="font-bold text-orange-500 text-sm kawaii-font flex items-center gap-2">{Icons.Move} ปรับขนาดข้อความ</h3>
-                                            <button onClick={() => setShowFontPanel(false)} className="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 p-1 rounded-full transition">{Icons.Close}</button>
-                                        </div>
-                                        <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                                            <FontSlider label="รหัสถัง (Tank ID)" value={scales.tankId} onChange={v => updateScale('tankId', v)} />
-                                            <FontSlider label="ชื่อสารเคมี" value={scales.productName} onChange={v => updateScale('productName', v)} />
-                                            <FontSlider label="หมายเลข UN" value={scales.unNumber} onChange={v => updateScale('unNumber', v)} />
-                                            <FontSlider label="คำสัญญาณ (Signal)" value={scales.signal} onChange={v => updateScale('signal', v)} />
-                                            <FontSlider label="ข้อความอันตราย" value={scales.hazard} onChange={v => updateScale('hazard', v)} />
-                                            <FontSlider label="ข้อควรระวัง" value={scales.precaution} onChange={v => updateScale('precaution', v)} />
-                                            <FontSlider label="หัวข้อ PPE" value={scales.ppeHeader} onChange={v => updateScale('ppeHeader', v)} />
-                                            <FontSlider label="รายการ PPE" value={scales.ppeText} onChange={v => updateScale('ppeText', v)} />
-                                            <FontSlider label="ขนาดรูป (Scale)" value={scales.picScale} onChange={v => updateScale('picScale', v)} />
-                                            <FontSlider label="ตำแหน่งรูป X (ซ้าย-ขวา)" value={scales.picX} min={-100} max={100} step={5} onChange={v => updateScale('picX', v)} />
-                                            <FontSlider label="ตำแหน่งรูป Y (ขึ้น-ลง)" value={scales.picY} min={-100} max={100} step={5} onChange={v => updateScale('picY', v)} />
-                                            <FontSlider label="ขนาด NFPA" value={scales.nfpa} onChange={v => updateScale('nfpa', v)} />
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>
 
+                    {/* Font Panel */}
+                    {showFontPanel && (
+                        <div className="fixed top-20 right-4 bg-white p-5 shadow-2xl border rounded-2xl z-50 w-80 max-h-[70vh] overflow-y-auto">
+                            <div className="flex justify-between items-center border-b pb-3 mb-3">
+                                <h3 className="font-bold text-gray-700">ปรับขนาดข้อความ</h3>
+                                <button onClick={() => setShowFontPanel(false)} className="text-gray-400 hover:text-red-500">✕</button>
+                            </div>
+                            <div className="space-y-2">
+                                <FontSlider label="รหัสถัง" value={scales.tankId} onChange={v => updateScale('tankId', v)} />
+                                <FontSlider label="ชื่อสารเคมี" value={scales.productName} onChange={v => updateScale('productName', v)} />
+                                <FontSlider label="หมายเลข UN" value={scales.unNumber} onChange={v => updateScale('unNumber', v)} />
+                                <FontSlider label="คำสัญญาณ" value={scales.signal} onChange={v => updateScale('signal', v)} />
+                                <FontSlider label="ข้อความอันตราย" value={scales.hazard} onChange={v => updateScale('hazard', v)} />
+                                <FontSlider label="ข้อควรระวัง" value={scales.precaution} onChange={v => updateScale('precaution', v)} />
+                                <FontSlider label="หัวข้อ PPE" value={scales.ppeHeader} onChange={v => updateScale('ppeHeader', v)} />
+                                <FontSlider label="รายการ PPE" value={scales.ppeText} onChange={v => updateScale('ppeText', v)} />
+                                <FontSlider label="ขนาดรูป" value={scales.picScale} onChange={v => updateScale('picScale', v)} />
+                                <FontSlider label="ตำแหน่ง X" value={scales.picX} min={-100} max={100} step={5} onChange={v => updateScale('picX', v)} />
+                                <FontSlider label="ตำแหน่ง Y" value={scales.picY} min={-100} max={100} step={5} onChange={v => updateScale('picY', v)} />
+                                <FontSlider label="ขนาด NFPA" value={scales.nfpa} onChange={v => updateScale('nfpa', v)} />
+                            </div>
+                        </div>
+                    )}
+
                     <div className="max-w-7xl mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-                        
-                        {/* LEFT: INPUT */}
-                        <div className="no-print w-full lg:w-1/3 bg-white p-6 rounded-3xl shadow-xl shadow-orange-100/50 border border-orange-50 space-y-6 h-fit overflow-y-auto max-h-[85vh]">
+                        {/* Input Form */}
+                        <div className="no-print w-full lg:w-1/3 bg-white p-6 rounded-2xl shadow-lg space-y-6 h-fit max-h-[85vh] overflow-y-auto">
                             <div className="space-y-4">
-                                <h3 className="font-bold text-orange-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-orange-100 pb-2"><span className="bg-orange-100 text-orange-600 rounded-lg p-1 text-sm">01</span> ข้อมูลทั่วไป</h3>
+                                <h3 className="font-bold text-indigo-600 text-lg border-b-2 pb-2">📋 ข้อมูลทั่วไป</h3>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div><label className="text-xs font-bold text-gray-400 ml-1">รหัสถัง</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.tankId} onChange={e => setFormData({...formData, tankId: e.target.value})} placeholder="T-0101" /></div>
-                                    <div><label className="text-xs font-bold text-gray-400 ml-1">หมายเลข UN</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50" value={formData.unNumber} onChange={e => setFormData({...formData, unNumber: e.target.value})} placeholder="1830" /></div>
-                                    <div className="col-span-2"><label className="text-xs font-bold text-gray-400 ml-1">ชื่อสารเคมี</label><input type="text" className="w-full p-2.5 rounded-xl bg-orange-50 font-bold text-gray-700" value={formData.productName} onChange={e => setFormData({...formData, productName: e.target.value})} placeholder="SULFURIC ACID" /></div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 ml-1">รหัสถัง</label>
+                                        <input type="text" className="w-full p-2.5 rounded-lg bg-gray-50" value={formData.tankId} onChange={e => setFormData({...formData, tankId: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 ml-1">หมายเลข UN</label>
+                                        <input type="text" className="w-full p-2.5 rounded-lg bg-gray-50" value={formData.unNumber} onChange={e => setFormData({...formData, unNumber: e.target.value})} />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-bold text-gray-500 ml-1">ชื่อสารเคมี</label>
+                                        <input type="text" className="w-full p-2.5 rounded-lg bg-gray-50 font-bold" value={formData.productName} onChange={e => setFormData({...formData, productName: e.target.value})} placeholder="SULFURIC ACID"/>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                <h3 className="font-bold text-sky-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-sky-100 pb-2"><span className="bg-sky-100 text-sky-600 rounded-lg p-1 text-sm">02</span> ข้อมูลอันตราย</h3>
-                                
-                                {/* Updated Pictogram Upload (Multi - up to 9) & Gallery */}
+                                <h3 className="font-bold text-red-600 text-lg border-b-2 pb-2">⚠️ ข้อมูลอันตราย</h3>
                                 <div>
-                                    <label className="text-xs font-bold text-gray-400 ml-1 mb-1 flex justify-between">
+                                    <label className="text-xs font-bold text-gray-500 mb-1 flex justify-between">
                                         <span>รูปสัญลักษณ์ (สูงสุด 9 รูป)</span>
-                                        <button onClick={() => setShowGallery(true)} className="text-sky-500 hover:underline cursor-pointer flex items-center gap-1 bg-sky-50 px-2 py-0.5 rounded-full text-[10px]">
-                                            {Icons.Grid} คลังรูปส่วนตัว
-                                        </button>
+                                        <button onClick={() => setShowGallery(true)} className="text-indigo-500 hover:underline text-xs">คลังรูป</button>
                                     </label>
                                     <div className="flex gap-2 flex-wrap">
-                                        <label className="flex-grow flex flex-col items-center justify-center p-3 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer hover:bg-sky-50 transition-colors group min-h-[60px]">
-                                            <div className="text-sky-300 group-hover:text-sky-500 transition-colors transform group-hover:scale-110 duration-300">{Icons.Upload}</div>
-                                            <span className="mt-1 text-xs font-bold text-sky-400">อัปโหลดเอง</span>
+                                        <label className="flex-grow flex flex-col items-center justify-center p-3 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 min-h-[60px]">
+                                            <span className="text-2xl">⬆️</span>
+                                            <span className="mt-1 text-xs font-bold text-gray-400">อัปโหลด</span>
                                             <input type="file" accept="image/*" multiple className="hidden" onChange={handlePictogramUpload} />
                                         </label>
                                         {formData.pictograms.map((img, i) => (
-                                            <div key={i} className="relative w-16 h-16 border rounded-lg bg-gray-50 flex items-center justify-center">
-                                                {/* Check if img is a string (URL/Base64) or a React Element (SVG) */}
-                                                {typeof img === 'string' ? (
-                                                    <img src={img} className="max-w-full max-h-full p-1 object-contain" />
-                                                ) : (
-                                                    <div className="w-full h-full p-1">{img}</div>
-                                                )}
-                                                <button onClick={() => removePictogram(i)} className="absolute -top-2 -right-2 bg-red-100 text-red-500 rounded-full p-0.5 shadow-sm hover:bg-red-200">
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                                </button>
+                                            <div key={i} className="relative w-16 h-16 border rounded-lg bg-gray-50">
+                                                <img src={img} className="w-full h-full object-contain p-1" alt="Pictogram" />
+                                                <button onClick={() => removePictogram(i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                                
-                                <div className="bg-sky-50 p-3 rounded-xl">
-                                    <label className="text-xs font-bold text-gray-400 mb-2 block text-center">รหัส NFPA</label>
+                                <div className="bg-gray-50 p-3 rounded-xl">
+                                    <label className="text-xs font-bold text-gray-500 mb-2 block text-center">รหัส NFPA</label>
                                     <div className="grid grid-cols-4 gap-2">
-                                        {['nfpaHealth', 'nfpaFlammability', 'nfpaInstability', 'nfpaSpecial'].map((f, i) => (
-                                            <div key={f} className="text-center">
-                                                <span className={`text-[10px] font-bold block mb-1 ${['text-blue-500','text-red-500','text-yellow-500','text-gray-500'][i]}`}>{['H','F','I','S'][i]}</span>
-                                                <input className="border-2 p-1 text-center w-full rounded-lg font-bold" value={formData[f]} onChange={e => setFormData({...formData, [f]: e.target.value})} />
-                                            </div>
-                                        ))}
+                                        <div>
+                                            <span className="text-xs font-bold text-blue-600 block mb-1">H</span>
+                                            <input className="border p-1 text-center w-full rounded font-bold" value={formData.nfpaHealth} onChange={e => setFormData({...formData, nfpaHealth: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-bold text-red-600 block mb-1">F</span>
+                                            <input className="border p-1 text-center w-full rounded font-bold" value={formData.nfpaFlammability} onChange={e => setFormData({...formData, nfpaFlammability: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-bold text-yellow-600 block mb-1">I</span>
+                                            <input className="border p-1 text-center w-full rounded font-bold" value={formData.nfpaInstability} onChange={e => setFormData({...formData, nfpaInstability: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-bold text-gray-600 block mb-1">S</span>
+                                            <input className="border p-1 text-center w-full rounded font-bold" value={formData.nfpaSpecial} onChange={e => setFormData({...formData, nfpaSpecial: e.target.value})} />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="mb-1"><label className="text-xs font-bold text-gray-400 ml-1">คำสัญญาณ</label><select className="w-full p-2.5 rounded-xl bg-sky-50 font-bold text-gray-600" value={formData.signalWord} onChange={e => setFormData({...formData, signalWord: e.target.value})}><option value="DANGER อันตราย">🔴 DANGER อันตราย</option><option value="WARNING ระวัง">🟠 WARNING ระวัง</option><option value="NONE ไม่มี">⚪ NONE ไม่มี</option></select></div>
-                                <div className="mb-1"><label className="text-xs font-bold text-gray-400 ml-1">ข้อความอันตราย</label><textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="4" value={formData.hazardStatements} onChange={e => setFormData({...formData, hazardStatements: e.target.value})}></textarea></div>
-                                <div><label className="text-xs font-bold text-gray-400 ml-1">ข้อควรระวัง</label><textarea className="w-full p-3 rounded-xl bg-sky-50 text-sm" rows="3" value={formData.precautionaryStatements} onChange={e => setFormData({...formData, precautionaryStatements: e.target.value})}></textarea></div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 ml-1">คำสัญญาณ</label>
+                                    <select className="w-full p-2.5 rounded-lg bg-gray-50 font-bold" value={formData.signalWord} onChange={e => setFormData({...formData, signalWord: e.target.value})}>
+                                        <option value="DANGER">🔴 DANGER</option>
+                                        <option value="WARNING">🟠 WARNING</option>
+                                        <option value="">⚪ NONE</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 ml-1">ข้อความอันตราย</label>
+                                    <textarea className="w-full p-3 rounded-lg bg-gray-50 text-sm" rows="4" value={formData.hazardStatements} onChange={e => setFormData({...formData, hazardStatements: e.target.value})} />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 ml-1">ข้อควรระวัง</label>
+                                    <textarea className="w-full p-3 rounded-lg bg-gray-50 text-sm" rows="3" value={formData.precautionaryStatements} onChange={e => setFormData({...formData, precautionaryStatements: e.target.value})} />
+                                </div>
                             </div>
 
                             <div className="space-y-4">
-                                <h3 className="font-bold text-amber-500 flex items-center gap-2 text-lg kawaii-font border-b-2 border-amber-100 pb-2"><span className="bg-amber-100 text-amber-600 rounded-lg p-1 text-sm">03</span> ความปลอดภัย</h3>
-                                <div className="bg-orange-50 p-4 rounded-2xl">
-                                    <label className="text-xs font-bold text-orange-400 mb-2 block">PPE Specific / อุปกรณ์ป้องกันเฉพาะเจาะจง</label>
-                                    <textarea className="w-full p-3 rounded-xl bg-orange-50 text-sm border-2 border-orange-200" rows="3" value={formData.ppeText} onChange={e => setFormData({...formData, ppeText: e.target.value})} placeholder="ระบุอุปกรณ์ PPE ที่ต้องใช้..."></textarea>
+                                <h3 className="font-bold text-blue-600 text-lg border-b-2 pb-2">🛡️ ความปลอดภัย</h3>
+                                <div className="bg-blue-50 p-4 rounded-xl">
+                                    <label className="text-xs font-bold text-blue-700 mb-2 block">PPE Specific</label>
+                                    <textarea className="w-full p-3 rounded-lg bg-white border text-sm" rows="3" value={formData.ppeText} onChange={e => setFormData({...formData, ppeText: e.target.value})} placeholder="ระบุอุปกรณ์ PPE ที่ต้องใช้..." />
                                 </div>
-
-                                {/* PPE Images Upload (3 Slots) */}
-                                <div className="bg-orange-50 p-4 rounded-2xl">
-                                    <label className="text-xs font-bold text-orange-400 mb-1 flex justify-between items-center">
-                                        <span>รูป PPE (สูงสุด 3 รูป)</span>
-                                        <button onClick={() => setShowPPEGallery(true)} className="text-orange-500 hover:underline cursor-pointer flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-full text-[10px]">
-                                            {Icons.Grid} คลังรูป PPE
-                                        </button>
+                                <div className="bg-blue-50 p-4 rounded-xl">
+                                    <label className="text-xs font-bold text-blue-700 mb-1 flex justify-between">
+                                        <span>รูป PPE (สูงสุด 5 รูป)</span>
+                                        <button onClick={() => setShowPPEGallery(true)} className="text-indigo-500 hover:underline text-xs">คลังรูป PPE</button>
                                     </label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {[0, 1, 2].map(index => (
+                                    <div className="grid grid-cols-5 gap-2">
+                                        {[0, 1, 2, 3, 4].map(index => (
                                             <div key={index} className="relative">
-                                                <div 
-                                                    className="flex flex-col items-center justify-center p-2 border-2 border-dashed border-orange-200 bg-white rounded-xl cursor-pointer hover:bg-orange-100 transition-colors h-24"
-                                                    onClick={() => openPPEGalleryForSlot(index)}
-                                                >
+                                                <div className="flex flex-col items-center justify-center p-2 border-2 border-dashed bg-white rounded-xl cursor-pointer hover:bg-blue-100 transition h-16" onClick={() => openPPEGalleryForSlot(index)}>
                                                     {formData.ppeImages[index] ? (
-                                                        <img src={formData.ppeImages[index]} className="max-h-full max-w-full object-contain" />
+                                                        <img src={formData.ppeImages[index]} className="max-h-full max-w-full object-contain" alt={`PPE ${index+1}`} />
                                                     ) : (
-                                                        <>
-                                                            <div className="text-orange-300 mb-1">{Icons.Upload}</div>
-                                                            <span className="text-[10px] font-bold text-orange-400 text-center">รูป {index + 1}</span>
-                                                        </>
+                                                        <span className="text-xs text-gray-400">+</span>
                                                     )}
                                                 </div>
-                                                {/* Hidden input for direct upload fallback if needed, but we use gallery now predominantly */}
-                                                
                                                 {formData.ppeImages[index] && (
-                                                    <button 
-                                                        onClick={() => clearPPEImage(index)} 
-                                                        className="absolute -top-2 -right-2 bg-red-100 text-red-500 rounded-full p-1 shadow-sm hover:bg-red-200"
-                                                        title="ลบรูป"
-                                                    >
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                                    </button>
+                                                    <button onClick={() => clearPPEImage(index)} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
                                                 )}
                                             </div>
                                         ))}
@@ -888,89 +732,110 @@
                             </div>
                         </div>
 
-                        {/* RIGHT: PREVIEW */}
+                        {/* Preview */}
                         <div className="w-full lg:w-2/3 flex flex-col items-center pt-4">
-                            <div className="no-print mb-4 flex items-center gap-2 text-gray-400 text-sm font-bold bg-white px-4 py-1 rounded-full shadow-sm animate-bounce">คลิกที่ป้ายเพื่อขยายและบันทึกภาพ</div>
-                            <div className="preview-container relative w-full flex justify-center group">
+                            <div className="no-print mb-4 text-sm font-bold text-white bg-white/20 px-4 py-2 rounded-full backdrop-blur">
+                                👆 คลิกที่ป้ายเพื่อขยายและดาวน์โหลด
+                            </div>
+                            <div className="w-full">
                                 <GHSLabel id="tank-label-preview" formData={formData} scales={scales} onClick={() => setIsModalOpen(true)} />
-                                <div className="overlay absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg"><div className="bg-white text-gray-800 px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 transform scale-0 group-hover:scale-100 transition-transform duration-300">{Icons.Maximize} คลิกเพื่อขยาย</div></div>
                             </div>
                         </div>
                     </div>
 
-                    {/* MODAL: MY GALLERY */}
+                    {/* Pictogram Gallery Modal */}
                     {showGallery && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden relative">
-                                <div className="p-4 border-b bg-sky-50 flex justify-between items-center"><h3 className="font-bold text-sky-700 text-lg kawaii-font">คลังรูป GHS ส่วนตัว</h3><button onClick={() => setShowGallery(false)} className="text-gray-400 hover:text-red-500">{Icons.Close}</button></div>
-                                
-                                {/* Upload New Button Area */}
-                                <div className="p-4 bg-sky-50 border-b border-sky-100 flex justify-center">
-                                    <label className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-full cursor-pointer flex items-center gap-2 transition shadow-md">
-                                        {Icons.Upload}
-                                        <span>อัปโหลดรูปลงคลัง</span>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+                                <div className="p-4 border-b bg-indigo-50 flex justify-between items-center">
+                                    <h3 className="font-bold text-indigo-700 text-lg">คลังรูป Pictogram</h3>
+                                    <button onClick={() => setShowGallery(false)} className="text-gray-400 hover:text-red-500 text-2xl">×</button>
+                                </div>
+                                <div className="p-4 bg-indigo-50 border-b">
+                                    <label className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-full cursor-pointer inline-flex items-center gap-2">
+                                        <span>⬆️ เพิ่มรูปใหม่</span>
                                         <input type="file" accept="image/*" className="hidden" onChange={addToLibrary} />
                                     </label>
                                 </div>
-
-                                <div className="p-4 overflow-y-auto flex-grow bg-white">
-                                    {libraryImages.length === 0 ? (
-                                        <div className="text-center text-gray-400 py-10 flex flex-col items-center">
-                                            <div className="opacity-50 mb-2">{Icons.ImageIcon}</div>
-                                            ยังไม่มีรูปในคลัง<br/>กดปุ่มด้านบนเพื่อเพิ่มรูป
-                                        </div>
-                                    ) : (
-                                        <div className="gallery-grid">
-                                            {libraryImages.map((imgSrc, i) => (
-                                                <div key={i} className="gallery-item flex flex-col items-center" onClick={() => selectFromLibrary(imgSrc)}>
-                                                    <div className="w-16 h-16 relative flex items-center justify-center">
-                                                         {/* Check if imgSrc is SVG element or string */}
-                                                         {typeof imgSrc === 'string' ? <img src={imgSrc} className="max-w-full max-h-full object-contain" /> : <div className="w-full h-full">{imgSrc}</div>}
-                                                    </div>
-                                                    <div className="gallery-delete" onClick={(e) => deleteFromLibrary(i, e)} title="ลบออกจากคลัง">
-                                                        {Icons.Trash}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                <div className="flex-grow overflow-y-auto p-4 bg-gray-50">
+                                    <div className="gallery-grid">
+                                        {libraryImages.length > 0 ? libraryImages.map((img, i) => (
+                                            <div key={i} className="gallery-item" onClick={() => selectFromLibrary(img)}>
+                                                <img src={img} className="w-full h-full object-contain" alt="Lib" />
+                                                <div className="gallery-delete" onClick={(e) => deleteFromLibrary(i, e)}>×</div>
+                                            </div>
+                                        )) : (
+                                            <div className="col-span-full text-center text-gray-400 py-10">ไม่มีรูปในคลัง</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* MODAL: PPE GALLERY */}
+                    {/* PPE Gallery Modal */}
                     {showPPEGallery && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden relative">
-                                <div className="p-4 border-b bg-orange-50 flex justify-between items-center"><h3 className="font-bold text-orange-700 text-lg kawaii-font">คลังรูป PPE ส่วนตัว</h3><button onClick={() => setShowPPEGallery(false)} className="text-gray-400 hover:text-red-500">{Icons.Close}</button></div>
-                                
-                                <div className="p-4 bg-orange-50 border-b border-orange-100 flex justify-center">
-                                    <label className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-full cursor-pointer flex items-center gap-2 transition shadow-md">
-                                        {Icons.Upload}
-                                        <span>อัปโหลดรูปลงคลัง PPE</span>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+                                <div className="p-4 border-b bg-blue-50 flex justify-between items-center">
+                                    <h3 className="font-bold text-blue-700 text-lg">คลังรูป PPE</h3>
+                                    <button onClick={() => setShowPPEGallery(false)} className="text-gray-400 hover:text-red-500 text-2xl">×</button>
+                                </div>
+                                <div className="p-4 bg-blue-50 border-b">
+                                    <label className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full cursor-pointer inline-flex items-center gap-2">
+                                        <span>⬆️ เพิ่มรูป PPE ใหม่</span>
                                         <input type="file" accept="image/*" className="hidden" onChange={addToPPELibrary} />
                                     </label>
                                 </div>
+                                <div className="flex-grow overflow-y-auto p-4 bg-gray-50">
+                                    <div className="gallery-grid">
+                                        {ppeLibraryImages.length > 0 ? ppeLibraryImages.map((img, i) => (
+                                            <div key={i} className="gallery-item" onClick={() => selectFromPPELibrary(img)}>
+                                                <img src={img} className="w-full h-full object-contain" alt="PPE Lib" />
+                                                <div className="gallery-delete" onClick={(e) => deleteFromPPELibrary(i, e)}>×</div>
+                                            </div>
+                                        )) : (
+                                            <div className="col-span-full text-center text-gray-400 py-10">ไม่มีรูปในคลัง</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                                <div className="p-4 overflow-y-auto flex-grow bg-white">
-                                    {ppeLibraryImages.length === 0 ? (
-                                        <div className="text-center text-gray-400 py-10 flex flex-col items-center">
-                                            <div className="opacity-50 mb-2">{Icons.ImageIcon}</div>
-                                            ยังไม่มีรูป PPE ในคลัง<br/>กดปุ่มด้านบนเพื่อเพิ่มรูป
-                                        </div>
-                                    ) : (
-                                        <div className="gallery-grid">
-                                            {ppeLibraryImages.map((imgSrc, i) => (
-                                                <div key={i} className="gallery-item flex flex-col items-center" onClick={() => selectFromPPELibrary(imgSrc)}>
-                                                    <div className="w-16 h-16 relative flex items-center justify-center">
-                                                         <img src={imgSrc} className="max-w-full max-h-full object-contain" />
+                    {/* Template Library Modal (Updated with Export/Import) */}
+                    {showLibrary && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+                                <div className="p-4 border-b bg-yellow-50 flex justify-between items-center">
+                                    <h3 className="font-bold text-yellow-700 text-lg">📂 แม่แบบที่บันทึกไว้</h3>
+                                    <button onClick={() => setShowLibrary(false)} className="text-gray-400 hover:text-red-500 text-2xl">×</button>
+                                </div>
+                                {/* Export/Import Controls */}
+                                <div className="p-3 bg-gray-50 border-b flex gap-2 justify-center">
+                                    <button onClick={handleExportData} className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">⬇️ สำรองข้อมูล</button>
+                                    <label className="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 cursor-pointer">
+                                        ⬆️ เรียกคืนข้อมูล
+                                        <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                                    </label>
+                                </div>
+                                <div className="flex-grow overflow-y-auto p-4">
+                                    {savedLabels.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {savedLabels.map((item) => (
+                                                <div key={item.id} className="flex justify-between items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => handleLoadTemplate(item)}>
+                                                    <div>
+                                                        <div className="font-bold text-gray-800">{item.name}</div>
+                                                        <div className="text-xs text-gray-400">{item.data.tankId} • {item.data.productName}</div>
                                                     </div>
-                                                    <div className="gallery-delete" onClick={(e) => deleteFromPPELibrary(i, e)} title="ลบออกจากคลัง">
-                                                        {Icons.Trash}
-                                                    </div>
+                                                    <button onClick={(e) => handleDeleteTemplate(item.id, e)} className="text-red-500 hover:bg-red-50 p-2 rounded-full">🗑️</button>
                                                 </div>
                                             ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-gray-400 py-10">
+                                            ยังไม่มีการบันทึกแม่แบบ<br/>
+                                            <span className="text-xs text-gray-300">กด "บันทึก" เพื่อเพิ่มแม่แบบใหม่</span>
                                         </div>
                                     )}
                                 </div>
@@ -978,37 +843,31 @@
                         </div>
                     )}
 
-                    {/* MODAL & LIBRARY */}
-                    {showLibrary && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden relative">
-                                <div className="p-4 border-b bg-yellow-50 flex justify-between items-center"><h3 className="font-bold text-yellow-700 text-lg kawaii-font">คลังป้าย (ส่วนตัว)</h3><button onClick={() => setShowLibrary(false)} className="text-gray-400 hover:text-red-500">{Icons.Close}</button></div>
-                                <div className="p-4 overflow-y-auto flex-grow bg-white">{savedLabels.length === 0 ? (<div className="text-center text-gray-400 py-10">ไม่มีป้ายที่บันทึกไว้</div>) : (<div className="space-y-2">{savedLabels.map(template => (<div key={template.id} className="flex justify-between items-center p-3 border rounded-xl hover:bg-gray-50 transition"><div><div className="font-bold text-gray-700">{template.name}</div><div className="text-xs text-gray-400">{template.data.tankId} • {new Date(template.id).toLocaleDateString()}</div></div><div className="flex gap-2"><button onClick={() => handleLoadTemplate(template)} className="px-3 py-1 bg-green-100 text-green-600 rounded-lg text-xs font-bold hover:bg-green-200">เลือก</button><button onClick={() => handleDeleteTemplate(template.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg">{Icons.Trash}</button></div></div>))}</div>)}</div>
+                    {/* Full Preview Modal for Download (Fixed Scroll) */}
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md">
+                            <div className="flex min-h-screen items-center justify-center p-4">
+                                <div className="relative bg-white p-2 rounded shadow-2xl max-w-5xl w-full my-8">
+                                    <button onClick={() => setIsModalOpen(false)} className="absolute -top-10 right-0 text-white text-3xl hover:text-gray-300 z-50">×</button>
+                                    
+                                    <div id="tank-label-modal-content" className="w-full bg-white">
+                                        <GHSLabel formData={formData} scales={scales} />
+                                    </div>
+                                    
+                                    <div className="mt-6 flex justify-center gap-4 no-print pb-2">
+                                        <button 
+                                            onClick={handleDownloadPDF} 
+                                            disabled={isGenerating}
+                                            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg flex items-center gap-2 disabled:bg-gray-400 transition-all transform hover:scale-105"
+                                        >
+                                            {isGenerating ? '⏳ กำลังสร้าง...' : '📄 ดาวน์โหลด PDF (A4)'}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    {isModalOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden relative">
-                                <div className="p-4 border-b flex justify-between items-center bg-gray-50 z-10 relative"> 
-                                    <h2 className="text-xl font-bold text-gray-700 flex items-center gap-2 kawaii-font">{Icons.ImageIcon} ตัวอย่างป้าย</h2>
-                                    <div className="flex gap-2">
-                                        <button onClick={handleDownloadPDF} disabled={isGenerating} className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm kawaii-font disabled:opacity-50">
-                                            {Icons.Pdf} {isGenerating ? 'กำลังสร้าง PDF...' : 'บันทึกเป็น PDF'}
-                                        </button>
-                                        <button onClick={handleOpenImage} disabled={isGenerating} className="flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg hover:scale-105 transition-all text-sm kawaii-font disabled:opacity-50">
-                                            {Icons.NewWindow} {isGenerating ? 'กำลังสร้างภาพ...' : 'เปิดรูปในหน้าต่างใหม่'}
-                                        </button>
-                                        <button onClick={() => setIsModalOpen(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-600 p-2 rounded-full transition">{Icons.Close}</button>
-                                    </div>
-                                </div>
-                                <div className="p-4 md:p-8 overflow-y-auto bg-gray-100 flex-grow flex justify-center items-start modal-overlay">
-                                    <div className="shadow-2xl w-full"><GHSLabel id="tank-label-modal-content" formData={formData} scales={scales} isModal={true} /></div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         }
